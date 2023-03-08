@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Client, Message } from 'discord.js';
 import { ChatCompletionRequestMessage } from 'openai';
 import { ChatGPTService } from './chatgpt.service';
-import { JsonDBService } from './jsondb.factory';
+import { JsonDBService } from './jsondb.service';
 
 @Injectable()
 export class DiscordGateway {
@@ -40,10 +40,15 @@ export class DiscordGateway {
   async getSystemMessage(
     message: Message,
   ): Promise<ChatCompletionRequestMessage> {
-    const prompt = (await this.db.getData(
-      `/guild/${message.guild.id}/channel/${message.channel.id}/user/${message.author.id}/systemPrompt`,
-    )) as string;
-    return { role: 'system', content: prompt };
+    try {
+      const prompt = (await this.db.getData(
+        `/guild/${message.guild.id}/channel/${message.channel.id}/user/${message.author.id}/systemPrompt`,
+      )) as string;
+      return { role: 'system', content: prompt };
+    } catch (error) {
+      this.logger.warn(error, 'getSystemMessage');
+      return { role: 'system', content: '' };
+    }
   }
 
   async getHistory(message: Message) {

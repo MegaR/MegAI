@@ -7,7 +7,7 @@ import {
 } from '@discord-nestjs/core';
 import { Injectable } from '@nestjs/common';
 import { CommandInteraction } from 'discord.js';
-import { JsonDBService } from 'src/jsondb.factory';
+import { JsonDBService } from 'src/jsondb.service';
 
 class SetSystemPromptOptions {
   @Param({ description: 'Prompt', required: true })

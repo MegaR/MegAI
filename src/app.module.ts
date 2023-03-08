@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { GatewayIntentBits, Message } from 'discord.js';
 import { ConfigModule } from '@nestjs/config';
 import { ConfigService } from '@nestjs/config/dist';
-import { JsonDBService } from './jsondb.factory';
+import { JsonDBService } from './jsondb.service';
 import { SetSystemPromptCommand } from './commands/setsystemprompt.command';
 import { DiscordGateway } from './discord.gateway';
 import { ChatGPTService } from './chatgpt.service';
