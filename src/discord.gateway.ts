@@ -32,14 +32,17 @@ export class DiscordGateway {
     //@ts-ignore
     message.channel.sendTyping();
     const history = await this.getHistory(message);
-    const systemPrompt = await this.getSystemMessage();
-    // const user = message.author.username;
-    const completion = await this.chatGPT.complete([systemPrompt, ...history]); //, { user });
+    const systemPrompt = await this.getSystemMessage(message);
+    const completion = await this.chatGPT.complete([systemPrompt, ...history]);
     message.reply(completion);
   }
 
-  async getSystemMessage(): Promise<ChatCompletionRequestMessage> {
-    const prompt = (await this.db.getData('/systemPrompt')) as string;
+  async getSystemMessage(
+    message: Message,
+  ): Promise<ChatCompletionRequestMessage> {
+    const prompt = (await this.db.getData(
+      `/guild/${message.guild.id}/channel/${message.channel.id}/user/${message.author.id}/systemPrompt`,
+    )) as string;
     return { role: 'system', content: prompt };
   }
 
