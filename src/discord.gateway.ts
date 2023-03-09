@@ -32,6 +32,10 @@ export class DiscordGateway {
     //@ts-ignore
     message.channel.sendTyping();
     const history = await this.getHistory(message);
+    //trim history
+    while (history.length > 10) {
+      history.splice(0, 1);
+    }
     const systemPrompt = await this.getSystemMessage(message);
     const completion = await this.chatGPT.complete([systemPrompt, ...history]);
     message.reply(completion);
@@ -50,7 +54,7 @@ export class DiscordGateway {
       //No prompt found.
     }
     const username = message.author.username;
-    const postPrompt = `The user's name is ${username}. You can use discord emojis.`;
+    const postPrompt = `The user's name is ${username}. You can use emojis.`;
     return { role: 'system', content: prompt + postPrompt };
   }
 

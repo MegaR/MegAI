@@ -26,7 +26,7 @@ export class SetPersonalityCommand {
   async onSetSystemPrompt(
     @InteractionEvent(SlashCommandPipe) options: SetPersonalityOptions,
     @InteractionEvent() interaction: CommandInteraction,
-  ): Promise<string> {
+  ) {
     const systemPrompt = options.prompt.trim().replace(/\.+$/, '');
     await this.storage.push(`/guild/${interaction.guild.id}`, {
       name: interaction.guild.name,
@@ -39,6 +39,9 @@ export class SetPersonalityCommand {
       `/guild/${interaction.guild.id}/channel/${interaction.channel.id}/user/${interaction.user.id}`,
       { name: interaction.user.username, systemPrompt },
     );
-    return `Set system prompt to: ${systemPrompt}`;
+    await interaction.reply({
+      content: `Set system prompt to: ${systemPrompt}`,
+      ephemeral: false,
+    });
   }
 }
