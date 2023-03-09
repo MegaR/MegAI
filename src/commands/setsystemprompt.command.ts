@@ -9,22 +9,22 @@ import { Injectable } from '@nestjs/common';
 import { CommandInteraction } from 'discord.js';
 import { JsonDBService } from 'src/jsondb.service';
 
-class SetSystemPromptOptions {
+class SetPersonalityOptions {
   @Param({ description: 'Prompt', required: true })
   prompt: string;
 }
 
 @Command({
-  name: 'set-system-prompt',
+  name: 'set-personality',
   description: 'Set the system prompt',
 })
 @Injectable()
-export class SetSystemPromptCommand {
+export class SetPersonalityCommand {
   constructor(private readonly storage: JsonDBService) {}
 
   @Handler()
   async onSetSystemPrompt(
-    @InteractionEvent(SlashCommandPipe) options: SetSystemPromptOptions,
+    @InteractionEvent(SlashCommandPipe) options: SetPersonalityOptions,
     @InteractionEvent() interaction: CommandInteraction,
   ): Promise<string> {
     const systemPrompt = options.prompt.trim().replace(/\.+$/, '');

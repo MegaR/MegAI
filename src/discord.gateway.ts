@@ -40,15 +40,18 @@ export class DiscordGateway {
   async getSystemMessage(
     message: Message,
   ): Promise<ChatCompletionRequestMessage> {
+    let prompt = '';
     try {
-      const prompt = (await this.db.getData(
-        `/guild/${message.guild.id}/channel/${message.channel.id}/user/${message.author.id}/systemPrompt`,
-      )) as string;
-      return { role: 'system', content: prompt };
+      prompt =
+        (await this.db.getData(
+          `/guild/${message.guild.id}/channel/${message.channel.id}/user/${message.author.id}/systemPrompt`,
+        )) + '. ';
     } catch (error) {
-      this.logger.warn(error, 'getSystemMessage');
-      return { role: 'system', content: '' };
+      //No prompt found.
     }
+    const username = message.author.username;
+    const postPrompt = `The user's name is ${username}. You can use discord emojis.`;
+    return { role: 'system', content: prompt + postPrompt };
   }
 
   async getHistory(message: Message) {

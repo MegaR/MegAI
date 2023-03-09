@@ -4,7 +4,7 @@ import { GatewayIntentBits, Message } from 'discord.js';
 import { ConfigModule } from '@nestjs/config';
 import { ConfigService } from '@nestjs/config/dist';
 import { JsonDBService } from './jsondb.service';
-import { SetSystemPromptCommand } from './commands/setsystemprompt.command';
+import { SetPersonalityCommand } from './commands/setsystemprompt.command';
 import { DiscordGateway } from './discord.gateway';
 import { ChatGPTService } from './chatgpt.service';
 
@@ -37,7 +37,7 @@ import { ChatGPTService } from './chatgpt.service';
     JsonDBService,
     ChatGPTService,
     DiscordGateway,
-    SetSystemPromptCommand,
+    SetPersonalityCommand,
   ],
 })
 export class AppModule {}
