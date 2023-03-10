@@ -8,6 +8,7 @@ import { SetPersonalityCommand } from './commands/setpersonality.command';
 import { DiscordGateway } from './discord.gateway';
 import { ChatGPTService } from './chatgpt.service';
 import { StoryCommand } from './commands/story.command';
+import { ComplimentCommand } from './commands/compliment.command';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { StoryCommand } from './commands/story.command';
     DiscordGateway,
     SetPersonalityCommand,
     StoryCommand,
+    ComplimentCommand,
   ],
 })
 export class AppModule {}
