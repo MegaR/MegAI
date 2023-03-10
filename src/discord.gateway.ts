@@ -23,8 +23,11 @@ export class DiscordGateway {
   @On('messageCreate')
   async onMessage(message: Message) {
     const isMentioned = message.mentions.users.has(this.client.user.id);
-    if (!isMentioned) return;
-    await this.mentioned(message);
+    if (isMentioned) {
+      await this.mentioned(message);
+    } else if (Math.random() < 0.01) {
+      await this.emojiReaction(message);
+    }
   }
 
   async mentioned(message: Message) {
@@ -71,5 +74,20 @@ export class DiscordGateway {
       .trim();
     history = [...history, { role, content: text }];
     return history;
+  }
+
+  async emojiReaction(message: Message) {
+    const messages: ChatCompletionRequestMessage[] = [
+      { role: 'system', content: 'You give short responses with only emojis' },
+      { role: 'user', content: message.cleanContent },
+    ];
+    const reaction = await this.chatGPT.complete(messages);
+    try {
+      for (const emoji of [...reaction]) {
+        await message.react(emoji);
+      }
+    } catch (error) {
+      this.logger.warn('failed to react', reaction, error);
+    }
   }
 }
