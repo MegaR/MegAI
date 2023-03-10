@@ -24,7 +24,7 @@ class ComplimentCommandOptions {
 @Command({
   name: 'compliment',
   description: 'Write a compliment about somebody',
-  defaultMemberPermissions: PermissionFlagsBits.ManageGuild,
+  defaultMemberPermissions: PermissionFlagsBits.SendMessages,
 })
 @Injectable()
 export class ComplimentCommand {

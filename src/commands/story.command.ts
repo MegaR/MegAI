@@ -26,7 +26,7 @@ class StoryCommandOptions {
 @Command({
   name: 'story',
   description: 'Get a story about someone',
-  defaultMemberPermissions: PermissionFlagsBits.ManageGuild,
+  defaultMemberPermissions: PermissionFlagsBits.SendMessages,
 })
 @Injectable()
 export class StoryCommand {

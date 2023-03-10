@@ -17,7 +17,7 @@ class SetPersonalityOptions {
 @Command({
   name: 'set-personality',
   description: 'Set the system prompt',
-  defaultMemberPermissions: PermissionFlagsBits.ManageGuild,
+  defaultMemberPermissions: PermissionFlagsBits.SendMessages,
 })
 @Injectable()
 export class SetPersonalityCommand {
