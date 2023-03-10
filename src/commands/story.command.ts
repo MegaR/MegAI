@@ -8,7 +8,12 @@ import {
   ParamType,
 } from '@discord-nestjs/core';
 import { Injectable } from '@nestjs/common';
-import { Client, CommandInteraction, MessageManager } from 'discord.js';
+import {
+  Client,
+  CommandInteraction,
+  MessageManager,
+  PermissionFlagsBits,
+} from 'discord.js';
 import { ChatGPTService } from 'src/chatgpt.service';
 
 class StoryCommandOptions {
@@ -21,6 +26,7 @@ class StoryCommandOptions {
 @Command({
   name: 'story',
   description: 'Get a story about someone',
+  defaultMemberPermissions: PermissionFlagsBits.ManageGuild,
 })
 @Injectable()
 export class StoryCommand {

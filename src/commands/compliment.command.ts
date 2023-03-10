@@ -8,7 +8,12 @@ import {
   ParamType,
 } from '@discord-nestjs/core';
 import { Injectable } from '@nestjs/common';
-import { Client, CommandInteraction, MessageManager } from 'discord.js';
+import {
+  Client,
+  CommandInteraction,
+  MessageManager,
+  PermissionFlagsBits,
+} from 'discord.js';
 import { ChatGPTService } from 'src/chatgpt.service';
 
 class ComplimentCommandOptions {
@@ -19,6 +24,7 @@ class ComplimentCommandOptions {
 @Command({
   name: 'compliment',
   description: 'Write a compliment about somebody',
+  defaultMemberPermissions: PermissionFlagsBits.ManageGuild,
 })
 @Injectable()
 export class ComplimentCommand {

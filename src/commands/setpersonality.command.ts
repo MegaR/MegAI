@@ -6,7 +6,7 @@ import {
   Param,
 } from '@discord-nestjs/core';
 import { Injectable } from '@nestjs/common';
-import { CommandInteraction } from 'discord.js';
+import { CommandInteraction, PermissionFlagsBits } from 'discord.js';
 import { JsonDBService } from 'src/jsondb.service';
 
 class SetPersonalityOptions {
@@ -17,6 +17,7 @@ class SetPersonalityOptions {
 @Command({
   name: 'set-personality',
   description: 'Set the system prompt',
+  defaultMemberPermissions: PermissionFlagsBits.ManageGuild,
 })
 @Injectable()
 export class SetPersonalityCommand {
