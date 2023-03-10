@@ -53,13 +53,14 @@ export class StoryCommand {
           }: ${message.cleanContent}`,
       );
     //reduce the amount of messages
-    while (messages.length > 5) {
-      messages.splice(Math.floor(Math.random() * messages.length - 1), 1);
+    while (messages.length > 10) {
+      // messages.splice(Math.floor(Math.random() * messages.length - 1), 1);
+      messages.splice(0, 1);
     }
     const completion = await this.chatGPT.complete([
       {
         role: 'user',
-        content: `Discord messages:
+        content: `Message history:
 ${messages.join('\n')}`,
       },
       {
