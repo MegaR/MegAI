@@ -25,7 +25,7 @@ export class DiscordGateway {
     const isMentioned = message.mentions.users.has(this.client.user.id);
     if (isMentioned) {
       await this.mentioned(message);
-    } else if (Math.random() < 0.1) {
+    } else if (Math.random() < 1) {
       await this.emojiReaction(message);
     }
   }
@@ -78,16 +78,19 @@ export class DiscordGateway {
 
   async emojiReaction(message: Message) {
     const messages: ChatCompletionRequestMessage[] = [
-      { role: 'system', content: 'You give short responses with only emojis' },
+      {
+        role: 'system',
+        content: 'You give short responses with only discord emojis.',
+      },
       { role: 'user', content: message.cleanContent },
     ];
     const reaction = await this.chatGPT.complete(messages);
-    try {
-      for (const emoji of [...reaction]) {
+    for (const emoji of [...reaction]) {
+      try {
         await message.react(emoji);
+      } catch (error) {
+        this.logger.warn('failed to react', reaction, error);
       }
-    } catch (error) {
-      this.logger.warn('failed to react', reaction, error);
     }
   }
 }
