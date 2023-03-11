@@ -4,6 +4,7 @@ import { Client, Message } from 'discord.js';
 import { ChatCompletionRequestMessage } from 'openai';
 import { ChatGPTService } from './chatgpt.service';
 import { JsonDBService } from './jsondb.service';
+import { chunkReply } from './utils/chunkreply';
 
 @Injectable()
 export class DiscordGateway {
@@ -41,7 +42,7 @@ export class DiscordGateway {
     }
     const systemPrompt = await this.getSystemMessage(message);
     const completion = await this.chatGPT.complete([systemPrompt, ...history]);
-    message.reply(completion);
+    chunkReply(message, completion);
   }
 
   async getSystemMessage(
