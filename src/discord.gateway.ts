@@ -81,12 +81,13 @@ export class DiscordGateway {
     const messages: ChatCompletionRequestMessage[] = [
       {
         role: 'system',
-        content: 'You give short responses with only discord emojis.',
+        content: `You give short responses only using emojis.`,
       },
       { role: 'user', content: message.cleanContent },
     ];
     const reaction = await this.chatGPT.complete(messages);
-    for (const emoji of [...reaction]) {
+    const emojis = getEmojisFromString(reaction);
+    for (const emoji of [...emojis]) {
       try {
         await message.react(emoji);
       } catch (error) {
@@ -94,4 +95,15 @@ export class DiscordGateway {
       }
     }
   }
+}
+
+function getEmojisFromString(str: string) {
+  // Create a regex pattern that matches emojis
+  const regexPattern =
+    /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
+  // Use the `match` method on the string with the regex pattern to get all the emoji characters
+  const emojisArr = str.match(regexPattern);
+  // Join the emoji characters array to form a string of emojis
+  const emojisStr = emojisArr ? emojisArr.join('') : '';
+  return emojisStr;
 }
