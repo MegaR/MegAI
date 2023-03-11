@@ -25,7 +25,7 @@ export class JsonDBService {
     );
     await this.db.push(`/guild/${guildId}/user/${userId}`, {
       name: username,
-      prompt,
+      systemPrompt: prompt,
     });
   }
 
