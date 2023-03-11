@@ -50,6 +50,6 @@ export class EightballCommand {
         content: `My name is ${interaction.user.username}. ${question}`,
       },
     ]);
-    await interaction.editReply(completion);
+    await interaction.editReply(`Question: ${question}\nAnswer: ${completion}`);
   }
 }
