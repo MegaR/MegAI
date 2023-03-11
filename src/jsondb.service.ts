@@ -6,13 +6,32 @@ export class JsonDBService {
   private db: JsonDB;
 
   constructor() {
-    this.db = new JsonDB(new Config('jsonDB', true, true));
-  }
-  public async push(dataPath: string, data: any, override?: boolean) {
-    return await this.db.push(dataPath, data, override);
+    this.db = new JsonDB(new Config('jsonDB', true, true, undefined, true));
   }
 
-  public async getData(dataPath: string) {
-    return await this.db.getData(dataPath);
+  public async setPersonality(
+    guildId: string,
+    guildName: string,
+    userId: string,
+    username: string,
+    prompt: string,
+  ) {
+    await this.db.push(
+      `/guild/${guildId}`,
+      {
+        name: guildName,
+      },
+      false,
+    );
+    await this.db.push(`/guild/${guildId}/user/${userId}`, {
+      name: username,
+      prompt,
+    });
+  }
+
+  public async getPersonality(guildId: string, userId: string) {
+    return await this.db.getData(
+      `/guild/${guildId}/user/${userId}/systemPrompt`,
+    );
   }
 }

@@ -52,9 +52,8 @@ export class DiscordGateway {
     let prompt = '';
     try {
       prompt =
-        (await this.db.getData(
-          `/guild/${message.guild.id}/channel/${message.channel.id}/user/${message.author.id}/systemPrompt`,
-        )) + '. ';
+        (await this.db.getPersonality(message.guild.id, message.author.id)) +
+        '. ';
     } catch (error) {
       //No prompt found.
     }
