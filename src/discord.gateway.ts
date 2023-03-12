@@ -1,10 +1,11 @@
 import { InjectDiscordClient, On, Once } from '@discord-nestjs/core';
 import { Injectable, Logger } from '@nestjs/common';
-import { Client, Message } from 'discord.js';
+import { Client, Message, MessageManager } from 'discord.js';
 import { ChatCompletionRequestMessage } from 'openai';
 import { ChatGPTService } from './chatgpt.service';
 import { JsonDBService } from './jsondb.service';
 import { chunkReply } from './utils/chunkreply';
+import { getHistory } from './utils/gethistory';
 
 @Injectable()
 export class DiscordGateway {
@@ -27,12 +28,16 @@ export class DiscordGateway {
       await this.switch(message);
       return;
     }
-    let isMentioned = message.mentions.users.has(this.client.user.id);
-    if (!isMentioned) {
-      isMentioned = Math.random() < 0.01;
+    //return if the message was from the bot itself
+    if (message.author.id === this.client.user.id) {
+      return;
     }
+
+    const isMentioned = message.mentions.users.has(this.client.user.id);
     if (isMentioned) {
       await this.mentioned(message);
+    } else if (Math.random() < 0.5) {
+      await this.randomResponse(message);
     }
     // } else if (Math.random() < 0.1) {
     //   await this.emojiReaction(message);
@@ -43,13 +48,36 @@ export class DiscordGateway {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     message.channel.sendTyping();
-    const history = await this.getHistory(message);
+    const history = await getHistory(message);
     //trim history
     while (history.length > 10) {
       history.splice(0, 1);
     }
     const systemPrompt = await this.getSystemMessage(message);
     const completion = await this.chatGPT.complete([systemPrompt, ...history]);
+    chunkReply(message, completion);
+  }
+
+  async randomResponse(message: Message) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    //@ts-ignore
+    message.channel.sendTyping();
+
+    const messageManager: MessageManager = (message.channel as unknown as any)
+      .messages;
+    const messages = await messageManager.fetch({ limit: 10 });
+    const history: ChatCompletionRequestMessage[] = messages.map((message) => ({
+      role: 'user',
+      content: `${message.author.username}: ${message.cleanContent}`,
+    }));
+
+    const systemPrompt: ChatCompletionRequestMessage = {
+      role: 'system',
+      content: 'You are a user on Discord. You can use emojis',
+    };
+    const completion = await this.chatGPT.complete([systemPrompt, ...history], {
+      maxTokens: 20,
+    });
     chunkReply(message, completion);
   }
 
@@ -69,24 +97,6 @@ export class DiscordGateway {
     return { role: 'system', content: prompt + postPrompt };
   }
 
-  async getHistory(message: Message, botId?: string) {
-    let history = [];
-    if (message.reference) {
-      const parent = await message.fetchReference();
-      history = await this.getHistory(parent);
-    }
-
-    if (!botId) {
-      botId = this.client.user.id;
-    }
-    const role = message.author.id === botId ? 'assistant' : 'user';
-    const text = message.cleanContent
-      .replace('@' + this.client.user.username, '')
-      .trim();
-    history = [...history, { role, content: text }];
-    return history;
-  }
-
   async switch(message: Message) {
     if (!message.reference) {
       await message.reply('The switch only works as a reply');
@@ -94,7 +104,9 @@ export class DiscordGateway {
     }
 
     const ref = await message.fetchReference();
-    const history = await this.getHistory(ref, ref.author.id);
+    const history = await getHistory(ref, {
+      botId: ref.author.id,
+    });
     //trim history
     while (history.length > 10) {
       history.splice(0, 1);
