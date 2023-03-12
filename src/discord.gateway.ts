@@ -36,7 +36,7 @@ export class DiscordGateway {
     const isMentioned = message.mentions.users.has(this.client.user.id);
     if (isMentioned) {
       await this.mentioned(message);
-    } else if (Math.random() < 0.5) {
+    } else if (Math.random() < 0.01) {
       await this.randomResponse(message);
     }
     // } else if (Math.random() < 0.1) {
