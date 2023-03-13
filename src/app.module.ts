@@ -12,6 +12,7 @@ import { ComplimentCommand } from './commands/compliment.command';
 import { EightballCommand } from './commands/eightball.command';
 import { SummarizerCommand } from './commands/summarizer.command';
 import { ComebackCommand } from './commands/comeback.command';
+import { RoastCommand } from './commands/roast.command';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { ComebackCommand } from './commands/comeback.command';
     EightballCommand,
     SummarizerCommand,
     ComebackCommand,
+    RoastCommand,
   ],
 })
 export class AppModule {}

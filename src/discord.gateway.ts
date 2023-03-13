@@ -194,7 +194,7 @@ export class DiscordGateway {
   async comeback(message: Message) {
     sendTyping(message.channel);
     if (!message.reference) {
-      await message.reply('The uwu command only works as a reply');
+      await message.reply('The comeback command only works as a reply');
       return;
     }
 
