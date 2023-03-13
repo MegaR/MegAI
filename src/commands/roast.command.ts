@@ -51,7 +51,7 @@ export class RoastCommand {
       .filter((message) => message.author.id === user)
       .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
       .map((message) => ({
-        role: 'user',
+        role: message.author.bot ? 'assistant' : 'user',
         name: message.author.username,
         content: message.cleanContent,
       }));
