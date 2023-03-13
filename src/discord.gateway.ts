@@ -66,18 +66,21 @@ export class DiscordGateway {
 
     const messageManager: MessageManager = (message.channel as unknown as any)
       .messages;
-    const messages = await messageManager.fetch({ limit: 10 });
+    let messages = await messageManager.fetch({ limit: 10 });
+    messages = messages.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
     const history: ChatCompletionRequestMessage[] = messages.map((message) => ({
       role: 'user',
-      content: `${message.author.username}: ${message.cleanContent}`,
+      content: message.cleanContent,
+      name: message.author.username,
     }));
 
     const systemPrompt: ChatCompletionRequestMessage = {
       role: 'system',
-      content: 'You are a user on Discord. You can use emojis',
+      content:
+        'You are a person on Discord. You can use emojis. You give short and clever responses.',
     };
     const completion = await this.chatGPT.complete([systemPrompt, ...history], {
-      maxTokens: 20,
+      maxTokens: 100,
     });
     chunkReply(message, completion);
   }
@@ -183,33 +186,33 @@ export class DiscordGateway {
     await reply.react('😺');
   }
 
-  async emojiReaction(message: Message) {
-    const messages: ChatCompletionRequestMessage[] = [
-      {
-        role: 'system',
-        content: `You give short responses only using emojis.`,
-      },
-      { role: 'user', content: message.cleanContent },
-    ];
-    const reaction = await this.chatGPT.complete(messages);
-    const emojis = getEmojisFromString(reaction);
-    for (const emoji of [...emojis]) {
-      try {
-        await message.react(emoji);
-      } catch (error) {
-        this.logger.warn('failed to react', reaction, error);
-      }
-    }
-  }
+  // async emojiReaction(message: Message) {
+  //   const messages: ChatCompletionRequestMessage[] = [
+  //     {
+  //       role: 'system',
+  //       content: `You give short responses only using emojis.`,
+  //     },
+  //     { role: 'user', content: message.cleanContent },
+  //   ];
+  //   const reaction = await this.chatGPT.complete(messages);
+  //   const emojis = getEmojisFromString(reaction);
+  //   for (const emoji of [...emojis]) {
+  //     try {
+  //       await message.react(emoji);
+  //     } catch (error) {
+  //       this.logger.warn('failed to react', reaction, error);
+  //     }
+  //   }
+  // }
 }
 
-function getEmojisFromString(str: string) {
-  // Create a regex pattern that matches emojis
-  const regexPattern =
-    /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
-  // Use the `match` method on the string with the regex pattern to get all the emoji characters
-  const emojisArr = str.match(regexPattern);
-  // Join the emoji characters array to form a string of emojis
-  const emojisStr = emojisArr ? emojisArr.join('') : '';
-  return emojisStr;
-}
+// function getEmojisFromString(str: string) {
+//   // Create a regex pattern that matches emojis
+//   const regexPattern =
+//     /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
+//   // Use the `match` method on the string with the regex pattern to get all the emoji characters
+//   const emojisArr = str.match(regexPattern);
+//   // Join the emoji characters array to form a string of emojis
+//   const emojisStr = emojisArr ? emojisArr.join('') : '';
+//   return emojisStr;
+// }
