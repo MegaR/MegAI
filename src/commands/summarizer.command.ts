@@ -1,15 +1,6 @@
-import { SlashCommandPipe } from '@discord-nestjs/common';
-import {
-  Command,
-  Handler,
-  InjectDiscordClient,
-  InteractionEvent,
-  Param,
-  ParamType,
-} from '@discord-nestjs/core';
+import { Command, Handler, InteractionEvent } from '@discord-nestjs/core';
 import { Injectable } from '@nestjs/common';
 import {
-  Client,
   CommandInteraction,
   MessageManager,
   PermissionFlagsBits,
@@ -34,7 +25,7 @@ export class SummarizerCommand {
     const messageManager: MessageManager = (
       interaction.channel as unknown as any
     ).messages;
-    let messages = await messageManager.fetch({ limit: 20 });
+    let messages = await messageManager.fetch({ limit: 15 });
     messages = messages.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
     const history: ChatCompletionRequestMessage[] = messages.map((message) => ({
       role: 'user',

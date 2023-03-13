@@ -11,6 +11,7 @@ import { StoryCommand } from './commands/story.command';
 import { ComplimentCommand } from './commands/compliment.command';
 import { EightballCommand } from './commands/eightball.command';
 import { SummarizerCommand } from './commands/summarizer.command';
+import { ComebackCommand } from './commands/comeback.command';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { SummarizerCommand } from './commands/summarizer.command';
     ComplimentCommand,
     EightballCommand,
     SummarizerCommand,
+    ComebackCommand,
   ],
 })
 export class AppModule {}
