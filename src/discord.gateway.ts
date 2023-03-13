@@ -25,6 +25,11 @@ export class DiscordGateway {
 
   @On('messageCreate')
   async onMessage(message: Message) {
+    //return if the message was from the bot itself
+    if (message.author.id === this.client.user.id) {
+      return;
+    }
+
     if (message.content === '!switch') {
       await this.switch(message);
       return;
@@ -37,8 +42,8 @@ export class DiscordGateway {
       await this.uwu(message);
       return;
     }
-    //return if the message was from the bot itself
-    if (message.author.id === this.client.user.id) {
+    if (message.content === '!comeback') {
+      await this.comeback(message);
       return;
     }
 
@@ -126,7 +131,7 @@ export class DiscordGateway {
       ...history,
       { role: 'user', content: 'SWITCH' },
     ]);
-    const reply = await message.reply(completion);
+    const reply = await ref.reply(completion);
     reply.react('🔃');
   }
 
@@ -154,7 +159,7 @@ export class DiscordGateway {
       ...history,
       { role: 'user', content: 'BASED' },
     ]);
-    const reply = await message.reply(completion);
+    const reply = await ref.reply(completion);
     await reply.react('🅱️');
   }
 
@@ -182,8 +187,28 @@ export class DiscordGateway {
         ].join('\n'),
       },
     ]);
-    const reply = await message.reply(completion);
+    const reply = await ref.reply(completion);
     await reply.react('😺');
+  }
+
+  async comeback(message: Message) {
+    sendTyping(message.channel);
+    if (!message.reference) {
+      await message.reply('The uwu command only works as a reply');
+      return;
+    }
+
+    const ref = await message.fetchReference();
+    const completion = await this.chatGPT.complete([
+      { role: 'user', content: ref.cleanContent, name: ref.author.username },
+      {
+        role: 'system',
+        content:
+          'Write a clever comeback to previous message. You can use emojis.',
+      },
+    ]);
+    const reply = await ref.reply(completion);
+    await reply.react('🔥');
   }
 
   // async emojiReaction(message: Message) {
