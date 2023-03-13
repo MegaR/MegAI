@@ -10,6 +10,7 @@ import { ChatGPTService } from './chatgpt.service';
 import { StoryCommand } from './commands/story.command';
 import { ComplimentCommand } from './commands/compliment.command';
 import { EightballCommand } from './commands/eightball.command';
+import { SummarizerCommand } from './commands/summarizer.command';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { EightballCommand } from './commands/eightball.command';
     StoryCommand,
     ComplimentCommand,
     EightballCommand,
+    SummarizerCommand,
   ],
 })
 export class AppModule {}

@@ -174,7 +174,6 @@ export class DiscordGateway {
           'Rewrite the last message with the following requirements:',
           'Use an uwu accent',
           'Make it sound cute',
-          // "Replace every 'r' with a 'w'",
           'Fill the text and end every sentence with cute action like **smiles**',
           'Use a lot of emojis',
         ].join('\n'),
