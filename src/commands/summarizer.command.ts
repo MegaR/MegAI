@@ -45,7 +45,7 @@ export class SummarizerCommand {
       ...history,
       {
         role: 'system',
-        content: `You are a summarizer. Summarize all messages`,
+        content: `You are a summarizer. Summarize all messages and add a little joke about the content at the end. You can use emojis`,
       },
     ]);
     await interaction.editReply(completion);
