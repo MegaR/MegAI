@@ -29,5 +29,9 @@ export async function getHistory(
     text = `${message.author.username}: ${text}`;
   }
   history = [...history, { role, content: text }];
+  //trim history
+  while (history.length > 10) {
+    history.splice(0, 1);
+  }
   return history;
 }
