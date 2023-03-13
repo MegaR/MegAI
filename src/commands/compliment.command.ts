@@ -14,6 +14,7 @@ import {
   MessageManager,
   PermissionFlagsBits,
 } from 'discord.js';
+import { ChatCompletionRequestMessage } from 'openai';
 import { ChatGPTService } from 'src/chatgpt.service';
 
 class ComplimentCommandOptions {
@@ -44,25 +45,22 @@ export class ComplimentCommand {
     const messageManager: MessageManager = (
       interaction.channel as unknown as any
     ).messages;
-    const messages = (await messageManager.fetch())
+    const messages: ChatCompletionRequestMessage[] = (
+      await messageManager.fetch()
+    )
       .filter((message) => message.author.id === user)
       .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
-      .map(
-        (message) =>
-          `[${message.createdAt.toLocaleString()}] ${
-            message.author.username
-          }: ${message.cleanContent}`,
-      );
+      .map((message) => ({
+        role: 'user',
+        name: message.author.username,
+        content: message.cleanContent,
+      }));
     //reduce the amount of messages
     while (messages.length > 10) {
       messages.splice(0, 1);
     }
     const completion = await this.chatGPT.complete([
-      {
-        role: 'user',
-        content: `Message history:
-${messages.join('\n')}`,
-      },
+      ...messages,
       {
         role: 'user',
         content: `Write a compliment about ${username}. Involve the content of the messages. You can use emojis`,
