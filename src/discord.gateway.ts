@@ -33,6 +33,10 @@ export class DiscordGateway {
       await this.based(message);
       return;
     }
+    if (message.content === '!uwu') {
+      await this.uwu(message);
+      return;
+    }
     //return if the message was from the bot itself
     if (message.author.id === this.client.user.id) {
       return;
@@ -97,7 +101,7 @@ export class DiscordGateway {
   async switch(message: Message) {
     sendTyping(message.channel);
     if (!message.reference) {
-      await message.reply('The switch only works as a reply');
+      await message.reply('The switch command only works as a reply');
       return;
     }
 
@@ -126,7 +130,7 @@ export class DiscordGateway {
   async based(message: Message) {
     sendTyping(message.channel);
     if (!message.reference) {
-      await message.reply('The based only works as a reply');
+      await message.reply('The based command only works as a reply');
       return;
     }
 
@@ -149,6 +153,35 @@ export class DiscordGateway {
     ]);
     const reply = await message.reply(completion);
     await reply.react('🅱️');
+  }
+
+  async uwu(message: Message) {
+    sendTyping(message.channel);
+    if (!message.reference) {
+      await message.reply('The uwu command only works as a reply');
+      return;
+    }
+
+    const ref = await message.fetchReference();
+    const history = await getHistory(ref, {
+      botId: ref.author.id,
+    });
+    const completion = await this.chatGPT.complete([
+      ...history,
+      {
+        role: 'system',
+        content: [
+          'Rewrite the last message with the following requirements:',
+          'Use an uwu accent',
+          'Make it sound cute',
+          // "Replace every 'r' with a 'w'",
+          'Fill the text and end every sentence with cute action like **smiles**',
+          'Use a lot of emojis',
+        ].join('\n'),
+      },
+    ]);
+    const reply = await message.reply(completion);
+    await reply.react('😺');
   }
 
   async emojiReaction(message: Message) {
