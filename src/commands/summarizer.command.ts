@@ -34,13 +34,13 @@ export class SummarizerCommand {
     const messageManager: MessageManager = (
       interaction.channel as unknown as any
     ).messages;
-    const messages = await messageManager.fetch({ limit: 20 });
+    let messages = await messageManager.fetch({ limit: 20 });
+    messages = messages.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
     const history: ChatCompletionRequestMessage[] = messages.map((message) => ({
       role: 'user',
       name: message.author.username,
       content: message.cleanContent,
     }));
-    console.log(history);
     const completion = await this.chatGPT.complete([
       ...history,
       {
