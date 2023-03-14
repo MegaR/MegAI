@@ -37,7 +37,6 @@ export class SummarizerCommand {
     while (this.countCharacters(history) > 4000) {
       history.splice(0, 1);
     }
-    console.log(history);
 
     const completion = await this.chatGPT.complete([
       ...history,
