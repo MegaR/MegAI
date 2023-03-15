@@ -16,7 +16,9 @@ import { DefendCommand } from './commands/chatcommands/defend.command';
 import { SwitchCommand } from './commands/replycommands/switch.command';
 import { BasedCommand } from './commands/replycommands/based.command';
 import { ComebackCommand } from './commands/replycommands/comeback.command';
-import { UwuCommand } from './commands/replycommands/uwu.command';
+import { UwuCommand } from './commands/replycommands/accents/uwu.command';
+import { RedneckCommand } from './commands/replycommands/accents/redneck.command';
+import { ReplyCommand } from './commands/replycommands/reply.command';
 
 @Module({
   imports: [
@@ -58,9 +60,12 @@ import { UwuCommand } from './commands/replycommands/uwu.command';
     RoastCommand,
     DefendCommand,
     SwitchCommand,
+    // AdviceCommand,
+    ReplyCommand,
     BasedCommand,
     ComebackCommand,
     UwuCommand,
+    // RedneckCommand,
   ],
 })
 export class AppModule {}
