@@ -1,19 +1,22 @@
 import { DiscordModule } from '@discord-nestjs/core';
 import { Module } from '@nestjs/common';
-import { GatewayIntentBits, Message } from 'discord.js';
+import { Client, GatewayIntentBits, Message } from 'discord.js';
 import { ConfigModule } from '@nestjs/config';
 import { ConfigService } from '@nestjs/config/dist';
 import { JsonDBService } from './jsondb.service';
-import { SetPersonalityCommand } from './commands/setpersonality.command';
+import { SetPersonalityCommand } from './commands/chatcommands/setpersonality.command';
 import { DiscordGateway } from './discord.gateway';
 import { ChatGPTService } from './chatgpt.service';
-import { StoryCommand } from './commands/story.command';
-import { ComplimentCommand } from './commands/compliment.command';
-import { EightballCommand } from './commands/eightball.command';
-import { SummarizerCommand } from './commands/summarizer.command';
-import { ComebackCommand } from './commands/comeback.command';
-import { RoastCommand } from './commands/roast.command';
-import { DefendCommand } from './commands/defend.command';
+import { StoryCommand } from './commands/chatcommands/story.command';
+import { ComplimentCommand } from './commands/chatcommands/compliment.command';
+import { EightballCommand } from './commands/chatcommands/eightball.command';
+import { SummarizerCommand } from './commands/chatcommands/summarizer.command';
+import { RoastCommand } from './commands/chatcommands/roast.command';
+import { DefendCommand } from './commands/chatcommands/defend.command';
+import { SwitchCommand } from './commands/replycommands/switch.command';
+import { BasedCommand } from './commands/replycommands/based.command';
+import { ComebackCommand } from './commands/replycommands/comeback.command';
+import { UwuCommand } from './commands/replycommands/uwu.command';
 
 @Module({
   imports: [
@@ -36,6 +39,9 @@ import { DefendCommand } from './commands/defend.command';
           },
         ],
       }),
+      setupClientFactory: (client: Client) => {
+        client.setMaxListeners(30);
+      },
       inject: [ConfigService],
     }),
   ],
@@ -49,9 +55,12 @@ import { DefendCommand } from './commands/defend.command';
     ComplimentCommand,
     EightballCommand,
     SummarizerCommand,
-    ComebackCommand,
     RoastCommand,
     DefendCommand,
+    SwitchCommand,
+    BasedCommand,
+    ComebackCommand,
+    UwuCommand,
   ],
 })
 export class AppModule {}
