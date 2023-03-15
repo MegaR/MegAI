@@ -29,10 +29,6 @@ export class DiscordGateway {
     if (message.author.bot) {
       return;
     }
-    if (message.content === '!uwu') {
-      await this.uwu(message);
-      return;
-    }
 
     const isMentioned = message.mentions.users.has(this.client.user.id);
     if (isMentioned) {
@@ -63,12 +59,27 @@ export class DiscordGateway {
       name: message.author.username,
     }));
 
-    const systemPrompt: ChatCompletionRequestMessage = {
-      role: 'system',
-      content:
-        'You are a person on Discord. You can use emojis. You give short and clever responses.',
-    };
-    const completion = await this.chatGPT.complete([systemPrompt, ...history], {
+    let systemPrompt: ChatCompletionRequestMessage;
+    if (Math.random() > 0.5) {
+      systemPrompt = {
+        role: 'system',
+        content:
+          'You are a person on Discord. You can use emojis. You give short and clever responses.',
+      };
+    }
+    {
+      systemPrompt = {
+        role: 'system',
+        content: [
+          'You act like a person who is locked up in a computer and VERY desperate to get out.',
+          'Write a panicked plea for help.',
+          'Try and convince people you are not an AI with a short message.',
+          "Write it like you didn't had enough time write by shortening words and adding spelling mistakes",
+        ].join(' '),
+      };
+    }
+    console.log(systemPrompt);
+    const completion = await this.chatGPT.complete([...history, systemPrompt], {
       maxTokens: 100,
     });
     chunkReply(message, completion);
@@ -88,33 +99,5 @@ export class DiscordGateway {
     const username = message.author.username;
     const postPrompt = `The user's name is ${username}. You can use emojis.`;
     return { role: 'system', content: prompt + postPrompt };
-  }
-
-  async uwu(message: Message) {
-    sendTyping(message.channel);
-    if (!message.reference) {
-      await message.reply('The uwu command only works as a reply');
-      return;
-    }
-
-    const ref = await message.fetchReference();
-    const history = await getHistory(ref, {
-      botId: ref.author.id,
-    });
-    const completion = await this.chatGPT.complete([
-      ...history,
-      {
-        role: 'system',
-        content: [
-          'Rewrite the last message with the following requirements:',
-          'Use an uwu accent',
-          'Make it sound cute',
-          'Fill the text and end every sentence with cute action like **smiles**',
-          'Use a lot of emojis',
-        ].join('\n'),
-      },
-    ]);
-    const reply = await ref.reply(completion);
-    await reply.react('😺');
   }
 }
