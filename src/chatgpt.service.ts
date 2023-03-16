@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from 'openai';
+import { JsonDBService } from './jsondb.service';
 
 interface ChatGPTOptions {
   maxTokens: number;
@@ -10,7 +11,10 @@ interface ChatGPTOptions {
 export class ChatGPTService {
   private openAI: OpenAIApi;
 
-  constructor(configService: ConfigService) {
+  constructor(
+    configService: ConfigService,
+    private readonly storage: JsonDBService,
+  ) {
     const token = configService.getOrThrow('OPENAI_API');
     const configuration = new Configuration({
       apiKey: token,
@@ -22,8 +26,9 @@ export class ChatGPTService {
     messages: Array<ChatCompletionRequestMessage>,
     options?: ChatGPTOptions,
   ) {
+    const model = await this.storage.getModelVersion();
     const completion = await this.openAI.createChatCompletion({
-      model: 'gpt-3.5-turbo',
+      model: model ? 'gpt-3.5-turbo' : 'gpt-4',
       messages: messages,
       temperature: 1,
       max_tokens: options?.maxTokens,

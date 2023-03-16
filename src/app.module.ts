@@ -19,6 +19,7 @@ import { ComebackCommand } from './commands/replycommands/comeback.command';
 import { UwuCommand } from './commands/replycommands/accents/uwu.command';
 import { RedneckCommand } from './commands/replycommands/accents/redneck.command';
 import { ReplyCommand } from './commands/replycommands/reply.command';
+import { ModelCommand } from './commands/chatcommands/model.command';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { ReplyCommand } from './commands/replycommands/reply.command';
     JsonDBService,
     ChatGPTService,
     DiscordGateway,
+    ModelCommand,
     SetPersonalityCommand,
     StoryCommand,
     ComplimentCommand,
@@ -60,7 +62,6 @@ import { ReplyCommand } from './commands/replycommands/reply.command';
     RoastCommand,
     DefendCommand,
     SwitchCommand,
-    // AdviceCommand,
     ReplyCommand,
     BasedCommand,
     ComebackCommand,

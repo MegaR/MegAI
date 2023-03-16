@@ -34,4 +34,17 @@ export class JsonDBService {
       `/guild/${guildId}/user/${userId}/systemPrompt`,
     );
   }
+
+  public async setModelVersion(model: 3 | 4) {
+    await this.db.push(`/model`, model);
+  }
+
+  public async getModelVersion(): Promise<3 | 4> {
+    const exists = await this.db.exists('/model');
+    if (!exists) {
+      return 3;
+    }
+    const model = (await this.db.getData(`/model`)) as 3 | 4;
+    return model;
+  }
 }
