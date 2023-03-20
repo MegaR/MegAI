@@ -64,15 +64,10 @@ export class DiscordGateway {
       }
     }
     payload = payload.concat(history);
-    try {
-      const completion = await this.chatGPT.complete(payload, {
-        model: url ? 3 : undefined,
-      });
-      chunkReply(message, completion);
-    } catch (e) {
-      this.logger.error(e);
-      message.reply('❌Failed to contact OpenAI');
-    }
+    const completion = await this.chatGPT.complete(payload, {
+      model: url ? 3 : undefined,
+    });
+    chunkReply(message, completion);
   }
 
   async randomResponse(message: Message) {
