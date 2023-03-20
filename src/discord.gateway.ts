@@ -47,21 +47,32 @@ export class DiscordGateway {
     let payload = [systemPrompt];
     const url = getURLFromString(message.cleanContent);
     if (url !== null) {
-      const article = await extract(url);
-      const body = Cheerio.load(article.content);
-      const webPageMessage: ChatCompletionRequestMessage = {
-        role: 'assistant',
-        content: `Website: ${url}\nAuthor: ${
-          article.author
-        }\nContent:\n${body.text()}`,
-      };
-      payload.push(webPageMessage);
+      try {
+        const article = await extract(url);
+        const body = Cheerio.load(article.content);
+        const webPageMessage: ChatCompletionRequestMessage = {
+          role: 'assistant',
+          content: `Website: ${url}\nAuthor: ${
+            article.author
+          }\nContent:\n${body.text()}`,
+        };
+        payload.push(webPageMessage);
+      } catch (e) {
+        this.logger.error(e);
+        message.reply('Failed to parse URL');
+        return;
+      }
     }
     payload = payload.concat(history);
-    const completion = await this.chatGPT.complete(payload, {
-      model: url ? 3 : undefined,
-    });
-    chunkReply(message, completion);
+    try {
+      const completion = await this.chatGPT.complete(payload, {
+        model: url ? 3 : undefined,
+      });
+      chunkReply(message, completion);
+    } catch (e) {
+      this.logger.error(e);
+      message.reply('❌Failed to contact OpenAI');
+    }
   }
 
   async randomResponse(message: Message) {
