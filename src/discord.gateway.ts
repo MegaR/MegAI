@@ -1,5 +1,7 @@
 import { InjectDiscordClient, On, Once } from '@discord-nestjs/core';
+import { extract } from '@extractus/article-extractor';
 import { Injectable, Logger } from '@nestjs/common';
+import * as Cheerio from 'cheerio';
 import { Client, Message, MessageManager } from 'discord.js';
 import { ChatCompletionRequestMessage } from 'openai';
 import { ChatGPTService } from './chatgpt.service';
@@ -42,7 +44,23 @@ export class DiscordGateway {
     sendTyping(message.channel);
     const history = await getHistory(message);
     const systemPrompt = await this.getSystemMessage(message);
-    const completion = await this.chatGPT.complete([systemPrompt, ...history]);
+    let payload = [systemPrompt];
+    const url = getURLFromString(message.cleanContent);
+    if (url !== null) {
+      const article = await extract(url);
+      const body = Cheerio.load(article.content);
+      const webPageMessage: ChatCompletionRequestMessage = {
+        role: 'assistant',
+        content: `Website: ${url}\nAuthor: ${
+          article.author
+        }\nContent:\n${body.text()}`,
+      };
+      payload.push(webPageMessage);
+    }
+    payload = payload.concat(history);
+    const completion = await this.chatGPT.complete(payload, {
+      model: url ? 3 : undefined,
+    });
     chunkReply(message, completion);
   }
 
@@ -78,7 +96,6 @@ export class DiscordGateway {
         ].join(' '),
       };
     }
-    console.log(systemPrompt);
     const completion = await this.chatGPT.complete([...history, systemPrompt], {
       maxTokens: 100,
     });
@@ -100,4 +117,10 @@ export class DiscordGateway {
     const postPrompt = `The user's name is ${username}. You can use emojis.`;
     return { role: 'system', content: prompt + postPrompt };
   }
+}
+
+function getURLFromString(input: string): string | null {
+  const urlRegex = /(https?:\/\/[^\s]+)/g; // Regular expression that matches URLs
+  const match = input.match(urlRegex); // Check if the input contains any URLs
+  return match ? match[0] : null; // Return the first URL if there's a match, or null if not
 }

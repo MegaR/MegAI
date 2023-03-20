@@ -4,7 +4,8 @@ import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from 'openai';
 import { JsonDBService } from './jsondb.service';
 
 interface ChatGPTOptions {
-  maxTokens: number;
+  maxTokens?: number;
+  model?: 3 | 4;
 }
 
 @Injectable()
@@ -26,9 +27,9 @@ export class ChatGPTService {
     messages: Array<ChatCompletionRequestMessage>,
     options?: ChatGPTOptions,
   ) {
-    const model = await this.storage.getModelVersion();
+    const model = options?.model || (await this.storage.getModelVersion());
     const completion = await this.openAI.createChatCompletion({
-      model: model ? 'gpt-3.5-turbo' : 'gpt-4',
+      model: model === 3 ? 'gpt-3.5-turbo' : 'gpt-4',
       messages: messages,
       temperature: 1,
       max_tokens: options?.maxTokens,

@@ -22,10 +22,12 @@
   "dependencies": {
     "@discord-nestjs/common": "^5.2.1",
     "@discord-nestjs/core": "^5.3.3",
+    "@extractus/article-extractor": "^7.2.11",
     "@nestjs/common": "^9.0.0",
     "@nestjs/config": "^2.3.1",
     "@nestjs/core": "^9.0.0",
     "@nestjs/platform-express": "^9.0.0",
+    "cheerio": "^1.0.0-rc.12",
     "discord.js": "^14.7.1",
     "node-json-db": "^2.1.4",
     "openai": "^3.2.1",
