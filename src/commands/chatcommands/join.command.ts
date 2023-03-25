@@ -112,6 +112,7 @@ export class JoinCommand {
       name: message.author.username,
     });
     if (this.thinking) {
+      console.log('Bot is thinking, ignoring the message...');
       return;
     }
     try {
@@ -124,7 +125,7 @@ export class JoinCommand {
       });
       await this.say(response);
     } catch (e) {
-      this.logger.error(e);
+      this.logger.error('Error during thinking process', e);
     } finally {
       this.thinking = false;
     }
@@ -148,12 +149,17 @@ export class JoinCommand {
       const resource = createAudioResource(url, {
         inputType: StreamType.Arbitrary,
       });
-      this.player.play(resource);
-      this.player.once('stateChange', (_oldState, newState) => {
+
+      const listener = (_oldState, newState) => {
         if (newState.status === 'idle') {
+          console.log('Audio playback finished');
+          this.player.removeListener('stateChange', listener);
           resolve();
         }
-      });
+      };
+
+      this.player.on('stateChange', listener);
+      this.player.play(resource);
     });
   }
 }
