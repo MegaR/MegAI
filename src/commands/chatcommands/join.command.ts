@@ -101,6 +101,9 @@ export class JoinCommand {
   }
 
   async onSpeech(message: Message) {
+    if (message.cleanContent === undefined) {
+      return;
+    }
     console.log('User: ', message.content);
     if (message.content === 'leave') {
       this.leaveChannel();
