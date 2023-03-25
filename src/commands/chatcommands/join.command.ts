@@ -48,6 +48,11 @@ export class JoinCommand {
     this.client.on('speech', (msg) => {
       this.onSpeech(msg);
     });
+    // this.client.on('voiceStateUpdate', (oldMember, newMember) => {
+    //   if(newMember) {
+    //     this.history.
+    //   }
+    // });
   }
 
   @Handler()
@@ -144,7 +149,7 @@ export class JoinCommand {
         inputType: StreamType.Arbitrary,
       });
       this.player.play(resource);
-      this.player.on('stateChange', (_oldState, newState) => {
+      this.player.once('stateChange', (_oldState, newState) => {
         if (newState.status === 'idle') {
           resolve();
         }
