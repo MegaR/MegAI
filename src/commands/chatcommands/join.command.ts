@@ -101,7 +101,7 @@ export class JoinCommand {
   }
 
   async onSpeech(message: Message) {
-    if (message.cleanContent === undefined) {
+    if (message.content === undefined) {
       return;
     }
     console.log('User: ', message.content);
