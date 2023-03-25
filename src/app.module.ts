@@ -20,6 +20,7 @@ import { UwuCommand } from './commands/replycommands/accents/uwu.command';
 import { RedneckCommand } from './commands/replycommands/accents/redneck.command';
 import { ReplyCommand } from './commands/replycommands/reply.command';
 import { ModelCommand } from './commands/chatcommands/model.command';
+import { JoinCommand } from './commands/chatcommands/join.command';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { ModelCommand } from './commands/chatcommands/model.command';
             GatewayIntentBits.Guilds,
             GatewayIntentBits.MessageContent,
             GatewayIntentBits.GuildMessages,
+            GatewayIntentBits.GuildVoiceStates,
           ],
         },
         registerCommandOptions: [
@@ -66,6 +68,7 @@ import { ModelCommand } from './commands/chatcommands/model.command';
     BasedCommand,
     ComebackCommand,
     UwuCommand,
+    JoinCommand,
     // RedneckCommand,
   ],
 })
