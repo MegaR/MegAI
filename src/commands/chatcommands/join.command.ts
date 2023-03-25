@@ -38,7 +38,7 @@ export class JoinCommand {
   private history: ChatCompletionRequestMessage[] = [];
   private thinking = false;
   private systemPrompt =
-    'Assistant is part of a voice call. Assistant will respond in English.';
+    'Assistant is part of a voice call. Assistant will respond in English. Assistant only gives short answers.';
 
   constructor(
     @InjectDiscordClient() private readonly client: Client,
@@ -104,7 +104,7 @@ export class JoinCommand {
     if (message.content === undefined) {
       return;
     }
-    console.log('User: ', message.content);
+    console.log(`${message.author.username}: ${message.content}`);
     if (message.content === 'leave') {
       this.leaveChannel();
       return;
@@ -120,7 +120,9 @@ export class JoinCommand {
     }
     try {
       this.thinking = true;
-      const response = await this.chatGPT.complete(this.history);
+      const response = await this.chatGPT.complete(this.history, {
+        maxTokens: 100,
+      });
       this.history.push({
         role: 'assistant',
         content: response,
