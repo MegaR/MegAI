@@ -5,7 +5,7 @@ import {
   MessageContextMenuCommandInteraction,
   PermissionFlagsBits,
 } from 'discord.js';
-import { ChatGPTService } from 'src/chatgpt.service';
+import { AiService } from 'src/ai/ai.service';
 import { getHistory } from 'src/utils/gethistory';
 
 @Command({
@@ -15,7 +15,7 @@ import { getHistory } from 'src/utils/gethistory';
 })
 @Injectable()
 export class ComebackCommand {
-  constructor(private readonly chatGPT: ChatGPTService) {}
+  constructor(private readonly aiService: AiService) {}
 
   @Handler()
   async onComebackCommand(
@@ -26,7 +26,7 @@ export class ComebackCommand {
     const history = await getHistory(message, {
       botId: message.author.id,
     });
-    const completion = await this.chatGPT.complete([
+    const completion = await this.aiService.complete([
       ...history,
       {
         role: 'system',

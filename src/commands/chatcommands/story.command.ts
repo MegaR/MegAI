@@ -14,7 +14,7 @@ import {
   MessageManager,
   PermissionFlagsBits,
 } from 'discord.js';
-import { ChatGPTService } from 'src/chatgpt.service';
+import { AiService } from 'src/ai/ai.service';
 
 class StoryCommandOptions {
   @Param({ description: 'User', required: true, type: ParamType.USER })
@@ -32,7 +32,7 @@ class StoryCommandOptions {
 export class StoryCommand {
   constructor(
     @InjectDiscordClient() private readonly client: Client,
-    private readonly chatGPT: ChatGPTService,
+    private readonly aiService: AiService,
   ) {}
 
   @Handler()
@@ -63,7 +63,7 @@ export class StoryCommand {
       // messages.splice(Math.floor(Math.random() * messages.length - 1), 1);
       messages.splice(0, 1);
     }
-    const completion = await this.chatGPT.complete([
+    const completion = await this.aiService.complete([
       {
         role: 'user',
         content: `Message history:

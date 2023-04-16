@@ -6,7 +6,7 @@ import {
   PermissionFlagsBits,
 } from 'discord.js';
 import { ChatCompletionRequestMessage } from 'openai';
-import { ChatGPTService } from 'src/chatgpt.service';
+import { AiService } from 'src/ai/ai.service';
 
 @Command({
   name: 'summary',
@@ -15,7 +15,7 @@ import { ChatGPTService } from 'src/chatgpt.service';
 })
 @Injectable()
 export class SummarizerCommand {
-  constructor(private readonly chatGPT: ChatGPTService) {}
+  constructor(private readonly aiService: AiService) {}
 
   @Handler()
   async onSummarizeCommand(
@@ -38,7 +38,7 @@ export class SummarizerCommand {
       history.splice(0, 1);
     }
 
-    const completion = await this.chatGPT.complete([
+    const completion = await this.aiService.complete([
       ...history,
       {
         role: 'system',

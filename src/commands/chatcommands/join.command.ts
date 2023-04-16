@@ -20,9 +20,9 @@ import {
   PermissionFlagsBits,
   VoiceBasedChannel,
 } from 'discord.js';
-import { ChatGPTService } from 'src/chatgpt.service';
 import * as googleTTS from 'google-tts-api';
 import { ChatCompletionRequestMessage } from 'openai';
+import { AiService } from 'src/ai/ai.service';
 
 @Command({
   name: 'join-channel',
@@ -42,7 +42,7 @@ export class JoinCommand {
 
   constructor(
     @InjectDiscordClient() private readonly client: Client,
-    private readonly chatGPT: ChatGPTService,
+    private readonly aiService: AiService,
   ) {
     addSpeechEvent(client);
     this.client.on('speech', (msg) => {
@@ -120,7 +120,7 @@ export class JoinCommand {
     }
     try {
       this.thinking = true;
-      const response = await this.chatGPT.complete(this.history, {
+      const response = await this.aiService.complete(this.history, {
         maxTokens: 100,
       });
       this.history.push({

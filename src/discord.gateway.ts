@@ -4,7 +4,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as Cheerio from 'cheerio';
 import { Client, Message, MessageManager } from 'discord.js';
 import { ChatCompletionRequestMessage } from 'openai';
-import { ChatGPTService } from './chatgpt.service';
+import { AiService } from './ai/ai.service';
 import { JsonDBService } from './jsondb.service';
 import { chunkReply } from './utils/chunkreply';
 import { getHistory } from './utils/gethistory';
@@ -16,7 +16,7 @@ export class DiscordGateway {
 
   constructor(
     @InjectDiscordClient() private readonly client: Client,
-    private readonly chatGPT: ChatGPTService,
+    private readonly aiService: AiService,
     private readonly db: JsonDBService,
   ) {}
 
@@ -64,7 +64,7 @@ export class DiscordGateway {
       }
     }
     payload = payload.concat(history);
-    const completion = await this.chatGPT.complete(payload, {
+    const completion = await this.aiService.complete(payload, {
       model: url ? 3 : undefined,
     });
     chunkReply(message, completion);
@@ -102,9 +102,12 @@ export class DiscordGateway {
         ].join(' '),
       };
     }
-    const completion = await this.chatGPT.complete([...history, systemPrompt], {
-      maxTokens: 100,
-    });
+    const completion = await this.aiService.complete(
+      [...history, systemPrompt],
+      {
+        maxTokens: 100,
+      },
+    );
     chunkReply(message, completion);
   }
 

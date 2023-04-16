@@ -15,7 +15,7 @@ import {
   PermissionFlagsBits,
 } from 'discord.js';
 import { ChatCompletionRequestMessage } from 'openai';
-import { ChatGPTService } from 'src/chatgpt.service';
+import { AiService } from 'src/ai/ai.service';
 
 class DefendCommandOptions {
   @Param({ description: 'User', required: true, type: ParamType.USER })
@@ -31,7 +31,7 @@ class DefendCommandOptions {
 export class DefendCommand {
   constructor(
     @InjectDiscordClient() private readonly client: Client,
-    private readonly chatGPT: ChatGPTService,
+    private readonly aiService: AiService,
   ) {}
 
   @Handler()
@@ -59,7 +59,7 @@ export class DefendCommand {
     while (messages.length > 10) {
       messages.splice(0, 1);
     }
-    const completion = await this.chatGPT.complete([
+    const completion = await this.aiService.complete([
       ...messages,
       {
         role: 'user',

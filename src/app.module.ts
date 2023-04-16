@@ -6,7 +6,6 @@ import { ConfigService } from '@nestjs/config/dist';
 import { JsonDBService } from './jsondb.service';
 import { SetPersonalityCommand } from './commands/chatcommands/setpersonality.command';
 import { DiscordGateway } from './discord.gateway';
-import { ChatGPTService } from './chatgpt.service';
 import { StoryCommand } from './commands/chatcommands/story.command';
 import { ComplimentCommand } from './commands/chatcommands/compliment.command';
 import { EightballCommand } from './commands/chatcommands/eightball.command';
@@ -21,6 +20,7 @@ import { RedneckCommand } from './commands/replycommands/accents/redneck.command
 import { ReplyCommand } from './commands/replycommands/reply.command';
 import { ModelCommand } from './commands/chatcommands/model.command';
 import { JoinCommand } from './commands/chatcommands/join.command';
+import { AiService } from './ai/ai.service';
 
 @Module({
   imports: [
@@ -53,7 +53,7 @@ import { JoinCommand } from './commands/chatcommands/join.command';
   controllers: [],
   providers: [
     JsonDBService,
-    ChatGPTService,
+    AiService,
     DiscordGateway,
     ModelCommand,
     SetPersonalityCommand,

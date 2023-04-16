@@ -2,21 +2,13 @@ import { SlashCommandPipe } from '@discord-nestjs/common';
 import {
   Command,
   Handler,
-  InjectDiscordClient,
   InteractionEvent,
   Param,
   ParamType,
 } from '@discord-nestjs/core';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  Client,
-  CommandInteraction,
-  MessageManager,
-  PermissionFlagsBits,
-} from 'discord.js';
-import { ChatCompletionRequestMessage } from 'openai';
-import { ChatGPTService } from 'src/chatgpt.service';
+import { CommandInteraction, PermissionFlagsBits } from 'discord.js';
 import { JsonDBService } from 'src/jsondb.service';
 
 class CommandOptions {

@@ -1,20 +1,15 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from 'openai';
+import { AiOptions, AiServiceInterface } from './ai/aiservice.interface';
 import { JsonDBService } from './jsondb.service';
 
-interface ChatGPTOptions {
-  maxTokens?: number;
-  model?: 3 | 4;
-}
-
-@Injectable()
-export class ChatGPTService {
+export class ChatGPTService implements AiServiceInterface {
   private readonly logger = new Logger(ChatGPTService.name);
   private openAI: OpenAIApi;
 
   constructor(
-    configService: ConfigService,
+    private readonly configService: ConfigService,
     private readonly storage: JsonDBService,
   ) {
     const token = configService.getOrThrow('OPENAI_API');
@@ -26,7 +21,7 @@ export class ChatGPTService {
 
   async complete(
     messages: Array<ChatCompletionRequestMessage>,
-    options?: ChatGPTOptions,
+    options?: AiOptions,
   ) {
     try {
       const model = options?.model || (await this.storage.getModelVersion());

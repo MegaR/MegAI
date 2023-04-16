@@ -8,7 +8,7 @@ import {
 } from '@discord-nestjs/core';
 import { Injectable } from '@nestjs/common';
 import { Client, CommandInteraction, PermissionFlagsBits } from 'discord.js';
-import { ChatGPTService } from 'src/chatgpt.service';
+import { AiService } from 'src/ai/ai.service';
 
 class EightballCommandOptions {
   @Param({ description: 'Question', required: true })
@@ -24,7 +24,7 @@ class EightballCommandOptions {
 export class EightballCommand {
   constructor(
     @InjectDiscordClient() private readonly client: Client,
-    private readonly chatGPT: ChatGPTService,
+    private readonly aiService: AiService,
   ) {}
 
   @Handler()
@@ -34,7 +34,7 @@ export class EightballCommand {
   ) {
     await interaction.deferReply({ ephemeral: false });
     //reduce the amount of messages
-    const completion = await this.chatGPT.complete([
+    const completion = await this.aiService.complete([
       {
         role: 'system',
         content: `You are a magic eightball. You make up a prediction based on the users question`,
