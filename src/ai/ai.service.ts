@@ -1,19 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ChatCompletionRequestMessage } from 'openai';
-import { ChatGPTService } from 'src/chatgpt.service';
+import { ChatGPT } from 'src/ai/chatgpt.ai';
 import { JsonDBService } from 'src/jsondb.service';
-import { AiOptions, AiServiceInterface } from './aiservice.interface';
+import { AiOptions, AiInterface } from './aiservice.interface';
+import Llama from './llama.ai';
 
 @Injectable()
 export class AiService {
-  private service: AiServiceInterface;
+  private service: AiInterface;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly storage: JsonDBService,
   ) {
-    this.service = new ChatGPTService(configService, storage);
+    // this.service = new ChatGPTService(configService, storage);
+    this.service = new Llama();
   }
 
   async complete(

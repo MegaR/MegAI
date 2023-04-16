@@ -39,3 +39,4 @@ lerna-debug.log*
 
 # Storage
 jsonDB.json
+models/

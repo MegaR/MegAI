@@ -5,7 +5,7 @@ export interface AiOptions {
   model?: 3 | 4;
 }
 
-export interface AiServiceInterface {
+export interface AiInterface {
   complete(
     messages: Array<ChatCompletionRequestMessage>,
     options?: AiOptions,

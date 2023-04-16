@@ -5,3 +5,4 @@ dist
 jsonDB.json
 .git
 .gitignore
+models

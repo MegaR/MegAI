@@ -1,11 +1,11 @@
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from 'openai';
-import { AiOptions, AiServiceInterface } from './ai/aiservice.interface';
-import { JsonDBService } from './jsondb.service';
+import { AiOptions, AiInterface } from './aiservice.interface';
+import { JsonDBService } from '../jsondb.service';
 
-export class ChatGPTService implements AiServiceInterface {
-  private readonly logger = new Logger(ChatGPTService.name);
+export class ChatGPT implements AiInterface {
+  private readonly logger = new Logger(ChatGPT.name);
   private openAI: OpenAIApi;
 
   constructor(
@@ -31,7 +31,7 @@ export class ChatGPTService implements AiServiceInterface {
         temperature: 1,
         max_tokens: options?.maxTokens,
       });
-      return completion.data.choices[0].message.content;
+      return completion.data.choices[0].message?.content ?? '';
     } catch (e) {
       this.logger.error(e);
       return '❌Failed to contact OpenAI';
