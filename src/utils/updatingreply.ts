@@ -11,7 +11,7 @@ export class UpdatingReply {
     this.reply = await this.parent.reply('⌛');
     this.interval = setInterval(async () => {
       if (this.reply.cleanContent !== this.progress && this.progress) {
-        this.reply = await this.reply.edit(this.progress);
+        this.reply = await this.reply.edit(this.progress + '⌛');
       }
     }, 1000);
     return this.reply;
@@ -24,7 +24,7 @@ export class UpdatingReply {
   async stop(result?: string) {
     clearInterval(this.interval);
     if (result) {
-      this.reply = await this.reply.edit(`${result} ✅`);
+      this.reply = await this.reply.edit(`${result}`);
     } else {
       this.reply = await this.reply.edit(`${this.progress} ❌`);
     }

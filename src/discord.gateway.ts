@@ -44,8 +44,7 @@ export class DiscordGateway {
   async mentioned(message: Message) {
     sendTyping(message.channel);
     const history = await getHistory(message);
-    const systemPrompt = await this.getSystemMessage(message);
-    let payload = [systemPrompt];
+    let payload = [];
     const url = getURLFromString(message.cleanContent);
     if (url !== null) {
       try {
@@ -123,22 +122,6 @@ export class DiscordGateway {
       },
     );
     chunkReply(message, completion);
-  }
-
-  async getSystemMessage(
-    message: Message,
-  ): Promise<ChatCompletionRequestMessage> {
-    let prompt = '';
-    try {
-      prompt =
-        (await this.db.getPersonality(message.guild.id, message.author.id)) +
-        '. ';
-    } catch (error) {
-      //No prompt found.
-    }
-    const username = message.author.username;
-    const postPrompt = `The user's name is ${username}. You can use emojis.`;
-    return { role: 'system', content: prompt + postPrompt };
   }
 }
 

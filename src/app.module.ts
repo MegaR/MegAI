@@ -4,7 +4,6 @@ import { Client, GatewayIntentBits, Message } from 'discord.js';
 import { ConfigModule } from '@nestjs/config';
 import { ConfigService } from '@nestjs/config/dist';
 import { JsonDBService } from './jsondb.service';
-import { SetPersonalityCommand } from './commands/chatcommands/setpersonality.command';
 import { DiscordGateway } from './discord.gateway';
 import { StoryCommand } from './commands/chatcommands/story.command';
 import { ComplimentCommand } from './commands/chatcommands/compliment.command';
@@ -16,7 +15,6 @@ import { SwitchCommand } from './commands/replycommands/switch.command';
 import { BasedCommand } from './commands/replycommands/based.command';
 import { ComebackCommand } from './commands/replycommands/comeback.command';
 import { UwuCommand } from './commands/replycommands/accents/uwu.command';
-import { RedneckCommand } from './commands/replycommands/accents/redneck.command';
 import { ReplyCommand } from './commands/replycommands/reply.command';
 import { ModelCommand } from './commands/chatcommands/model.command';
 import { JoinCommand } from './commands/chatcommands/join.command';
@@ -56,7 +54,6 @@ import { AiService } from './ai/ai.service';
     AiService,
     DiscordGateway,
     ModelCommand,
-    SetPersonalityCommand,
     StoryCommand,
     ComplimentCommand,
     EightballCommand,
