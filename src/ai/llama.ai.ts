@@ -29,6 +29,7 @@ export default class Llama implements AiInterface {
       vocabOnly: false,
       useMlock: false,
       embedding: false,
+      useMmap: true,
     };
     llama.load(config);
     this.llama = llama;
