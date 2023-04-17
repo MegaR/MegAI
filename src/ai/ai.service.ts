@@ -24,11 +24,16 @@ export class AiService {
   async complete(
     messages: Array<ChatCompletionRequestMessage>,
     options?: AiOptions,
+    progressCallback?: (progress: string) => void,
   ) {
     const botName = this.discordClient.user.username;
-    return await this.service.complete(messages, {
-      ...options,
-      botName: botName,
-    });
+    return await this.service.complete(
+      messages,
+      {
+        ...options,
+        botName: botName,
+      },
+      progressCallback,
+    );
   }
 }

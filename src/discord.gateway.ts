@@ -9,6 +9,7 @@ import { JsonDBService } from './jsondb.service';
 import { chunkReply } from './utils/chunkreply';
 import { getHistory } from './utils/gethistory';
 import { sendTyping } from './utils/sendtyping';
+import { UpdatingReply } from './utils/updatingreply';
 
 @Injectable()
 export class DiscordGateway {
@@ -64,10 +65,23 @@ export class DiscordGateway {
       }
     }
     payload = payload.concat(history);
-    const completion = await this.aiService.complete(payload, {
-      model: url ? 3 : undefined,
-    });
-    chunkReply(message, completion);
+    const updatingReply = new UpdatingReply(message);
+    await updatingReply.start();
+    try {
+      const completion = await this.aiService.complete(
+        payload,
+        {
+          model: url ? 3 : undefined,
+        },
+        async (progress) => {
+          await updatingReply.update(progress);
+        },
+      );
+      await updatingReply.stop(completion);
+    } catch (e) {
+      this.logger.error(e);
+      await updatingReply.stop();
+    }
   }
 
   async randomResponse(message: Message) {

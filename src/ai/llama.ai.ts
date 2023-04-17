@@ -37,24 +37,25 @@ export default class Llama implements AiInterface {
   async complete(
     messages: ChatCompletionRequestMessage[],
     options: AiOptions,
+    progressCallback: (progress: string) => void,
   ): Promise<string> {
     const prompt = this.toPrompt(messages, options.botName ?? 'Assistant');
 
     let result = '';
     await this.llama.createCompletion(
       {
-        nThreads: 8,
+        nThreads: 4,
         nTokPredict: options?.maxTokens ?? 256,
         topK: 40,
         topP: 0.1,
         temp: 0.7,
         repeatPenalty: 1,
-        stopSequence: '### Human',
+        stopSequence: '###',
         prompt: prompt,
       },
       (response) => {
         result += response.token;
-        console.log(response.token);
+        progressCallback(response.token);
       },
     );
     return this.cleanResult(result);
