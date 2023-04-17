@@ -1,16 +1,16 @@
 import { Message } from 'discord.js';
+import { ChatCompletionRequestMessage } from 'openai';
 
 interface GetHistoryOptions {
-  prependUsername?: boolean;
   botId?: string;
 }
 
 export async function getHistory(
   message: Message,
   options?: GetHistoryOptions,
-) {
+): Promise<ChatCompletionRequestMessage[]> {
   const client = message.client;
-  let history = [];
+  let history: ChatCompletionRequestMessage[] = [];
   if (message.reference) {
     const parent = await message.fetchReference();
     history = await getHistory(parent, options);
@@ -22,13 +22,13 @@ export async function getHistory(
   }
 
   const role = message.author.id === botId ? 'assistant' : 'user';
-  let text = message.cleanContent
+  const text = message.cleanContent
     .replace('@' + client.user.username, '')
     .trim();
-  if (options?.prependUsername) {
-    text = `${message.author.username}: ${text}`;
-  }
-  history = [...history, { role, content: text }];
+  history = [
+    ...history,
+    { role, content: text, name: message.author.username },
+  ];
   //trim history
   while (history.length > 10) {
     history.splice(0, 1);

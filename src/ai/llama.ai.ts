@@ -1,6 +1,6 @@
 import { ChatCompletionRequestMessage } from 'openai';
 import * as path from 'path';
-import { AiInterface, AiOptions } from './aiservice.interface';
+import { AiInterface, AiOptions } from './ai.interface';
 import * as fs from 'fs';
 
 export default class Llama implements AiInterface {
@@ -23,7 +23,7 @@ export default class Llama implements AiInterface {
       enableLogging: true,
       nCtx: 1024,
       nParts: -1,
-      seed: 0,
+      seed: Math.random() * 100,
       f16Kv: false,
       logitsAll: false,
       vocabOnly: false,
@@ -36,14 +36,14 @@ export default class Llama implements AiInterface {
 
   async complete(
     messages: ChatCompletionRequestMessage[],
-    options?: AiOptions,
+    options: AiOptions,
   ): Promise<string> {
-    const prompt = this.toPrompt(messages);
+    const prompt = this.toPrompt(messages, options.botName ?? 'Assistant');
 
     let result = '';
     await this.llama.createCompletion(
       {
-        nThreads: 4,
+        nThreads: 8,
         nTokPredict: options?.maxTokens ?? 256,
         topK: 40,
         topP: 0.1,
@@ -54,18 +54,19 @@ export default class Llama implements AiInterface {
       },
       (response) => {
         result += response.token;
+        console.log(response.token);
       },
     );
     return this.cleanResult(result);
   }
 
-  toPrompt(messages: ChatCompletionRequestMessage[]) {
+  toPrompt(messages: ChatCompletionRequestMessage[], botName: string) {
     let prompt = '';
     for (const message of messages) {
       const author = message.name ?? message.role;
       prompt += `### ${author}:\n${message.content}\n`;
     }
-    prompt += '### Assistant:';
+    prompt += `### ${botName}:\n`;
     return prompt;
   }
 

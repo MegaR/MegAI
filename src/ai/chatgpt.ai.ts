@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from 'openai';
-import { AiOptions, AiInterface } from './aiservice.interface';
+import { AiOptions, AiInterface } from './ai.interface';
 import { JsonDBService } from '../jsondb.service';
 
 export class ChatGPT implements AiInterface {
@@ -21,7 +21,7 @@ export class ChatGPT implements AiInterface {
 
   async complete(
     messages: Array<ChatCompletionRequestMessage>,
-    options?: AiOptions,
+    options: AiOptions,
   ) {
     try {
       const model = options?.model || (await this.storage.getModelVersion());
