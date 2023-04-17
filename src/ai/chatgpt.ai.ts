@@ -2,15 +2,14 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from 'openai';
 import { AiOptions, AiInterface } from './ai.interface';
-import { JsonDBService } from '../jsondb.service';
 
 export class ChatGPT implements AiInterface {
   private readonly logger = new Logger(ChatGPT.name);
   private openAI: OpenAIApi;
 
   constructor(
-    private readonly configService: ConfigService,
-    private readonly storage: JsonDBService,
+    configService: ConfigService,
+    private readonly model: 'gpt-3.5-turbo' | 'gpt-4',
   ) {
     const token = configService.getOrThrow('OPENAI_API');
     const configuration = new Configuration({
@@ -24,9 +23,8 @@ export class ChatGPT implements AiInterface {
     options: AiOptions,
   ) {
     try {
-      const model = options?.model || (await this.storage.getModelVersion());
       const completion = await this.openAI.createChatCompletion({
-        model: model === 3 ? 'gpt-3.5-turbo' : 'gpt-4',
+        model: this.model,
         messages: messages,
         temperature: 1,
         max_tokens: options?.maxTokens,

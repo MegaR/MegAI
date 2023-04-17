@@ -12,8 +12,12 @@ import { CommandInteraction, PermissionFlagsBits } from 'discord.js';
 import { JsonDBService } from 'src/jsondb.service';
 
 class CommandOptions {
-  @Param({ description: '3 or 4', required: true, type: ParamType.NUMBER })
-  model: number;
+  @Param({
+    description: '3 or 4 or llama',
+    required: true,
+    type: ParamType.STRING,
+  })
+  model: string;
 }
 
 @Command({
@@ -38,11 +42,11 @@ export class ModelCommand {
       interaction.reply('Permission denied!');
       return;
     }
-    if (model !== 3 && model !== 4) {
+    if (model !== '3' && model !== '4' && model !== 'llama') {
       interaction.reply('Invalid model');
       return;
     }
-    await this.storage.setModelVersion(model as 3 | 4);
+    await this.storage.setModelVersion(model as '3' | '4' | 'llama');
     interaction.reply(`Set model to: ${model}`);
   }
 }

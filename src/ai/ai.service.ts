@@ -10,15 +10,18 @@ import { InjectDiscordClient } from '@discord-nestjs/core';
 
 @Injectable()
 export class AiService {
-  private service: AiInterface;
+  private llama: AiInterface;
+  private chatGpt3: AiInterface;
+  private chatGpt4: AiInterface;
 
   constructor(
-    private readonly configService: ConfigService,
+    configService: ConfigService,
     private readonly storage: JsonDBService,
     @InjectDiscordClient() private readonly discordClient: Client,
   ) {
-    // this.service = new ChatGPTService(configService, storage);
-    this.service = new Llama();
+    this.llama = new Llama();
+    this.chatGpt3 = new ChatGPT(configService, 'gpt-3.5-turbo');
+    this.chatGpt4 = new ChatGPT(configService, 'gpt-4');
   }
 
   async complete(
@@ -26,8 +29,23 @@ export class AiService {
     options?: AiOptions,
     progressCallback?: (progress: string) => void,
   ) {
+    const model = await this.storage.getModelVersion();
     const botName = this.discordClient.user.username;
-    return await this.service.complete(
+
+    let ai: AiInterface;
+    switch (model) {
+      case 'llama':
+        ai = this.llama;
+        break;
+      default:
+      case '3':
+        ai = this.chatGpt3;
+        break;
+      case '4':
+        ai = this.chatGpt4;
+        break;
+    }
+    return await ai.complete(
       messages,
       {
         ...options,

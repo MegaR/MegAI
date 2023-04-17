@@ -2,7 +2,6 @@ import { ChatCompletionRequestMessage } from 'openai';
 
 export interface AiOptions {
   maxTokens?: number;
-  model?: 3 | 4;
   botName?: string;
 }
 

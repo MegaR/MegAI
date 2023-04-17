@@ -69,9 +69,7 @@ export class DiscordGateway {
     try {
       const completion = await this.aiService.complete(
         payload,
-        {
-          model: url ? 3 : undefined,
-        },
+        {},
         async (progress) => {
           await updatingReply.update(progress);
         },
