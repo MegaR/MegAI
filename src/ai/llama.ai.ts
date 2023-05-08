@@ -2,10 +2,11 @@ import { ChatCompletionRequestMessage } from 'openai';
 import * as path from 'path';
 import { AiInterface, AiOptions } from './ai.interface';
 import * as fs from 'fs';
+import { ConfigService } from '@nestjs/config';
 
 export default class Llama implements AiInterface {
   llama: any;
-  constructor() {
+  constructor(private readonly configService: ConfigService) {
     this.load();
   }
 
@@ -13,7 +14,10 @@ export default class Llama implements AiInterface {
     const llamaModule = await import('llama-node');
     // const llamaRSModule = await import('llama-node/dist/llm/llama-rs.js');
     const llamaCPPModule = await import('llama-node/dist/llm/llama-cpp.js');
-    const model = path.resolve(process.cwd(), './models/ggml-model-q4_1.bin');
+    const model = path.resolve(
+      process.cwd(),
+      this.configService.get('LLAMA_MODEL'),
+    );
     if (!fs.existsSync(model)) {
       throw new Error(`Model file not found: ${model}`);
     }
@@ -38,7 +42,7 @@ export default class Llama implements AiInterface {
   async complete(
     messages: ChatCompletionRequestMessage[],
     options: AiOptions,
-    progressCallback: (progress: string) => void,
+    progressCallback?: (progress: string) => void,
   ): Promise<string> {
     const prompt = this.toPrompt(messages, options.botName ?? 'Assistant');
 
@@ -56,7 +60,9 @@ export default class Llama implements AiInterface {
       },
       (response) => {
         result += response.token;
-        progressCallback(response.token);
+        if (progressCallback) {
+          progressCallback(response.token);
+        }
       },
     );
     return this.cleanResult(result);

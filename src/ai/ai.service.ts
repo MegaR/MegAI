@@ -10,7 +10,7 @@ import { InjectDiscordClient } from '@discord-nestjs/core';
 
 @Injectable()
 export class AiService {
-  private llama: AiInterface;
+  private llama?: AiInterface;
   private chatGpt3: AiInterface;
   private chatGpt4: AiInterface;
 
@@ -19,7 +19,9 @@ export class AiService {
     private readonly storage: JsonDBService,
     @InjectDiscordClient() private readonly discordClient: Client,
   ) {
-    this.llama = new Llama();
+    if (configService.get('LLAMA_MODEL')) {
+      this.llama = new Llama(configService);
+    }
     this.chatGpt3 = new ChatGPT(configService, 'gpt-3.5-turbo');
     this.chatGpt4 = new ChatGPT(configService, 'gpt-4');
   }
