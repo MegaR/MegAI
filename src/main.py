@@ -6,7 +6,8 @@ from langchain.agents import load_tools
 from langchain.agents import initialize_agent
 from langchain.agents import AgentType
 from langchain.agents import Tool
-from langchain.memory import ConversationBufferMemory
+from langchain.memory import ConversationBufferWindowMemory
+from langchain.tools import YouTubeSearchTool
 
 load_dotenv()
 
@@ -27,7 +28,7 @@ class MyClient(discord.Client):
         if self.user is None:
             return
         print(f'Message from {message.author.display_name}: {message.content}')
-        clean_message = message.clean_content.replace(f'@{self.user.display_name}', '').strip()
+        clean_message = f'{message.author.display_name}: ' + message.clean_content.replace(f'@{self.user.display_name}', '').strip()
         response = agent.run(input = clean_message)
         print(response)
         await self.chunk_reply(message, response)
@@ -41,11 +42,17 @@ class MyClient(discord.Client):
 ##################################################
 
 # Langchain
-
 llm = ChatOpenAI(openai_api_key=os.getenv('OPENAI_API') or '', client=None)
-memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-tools = load_tools(["llm-math", "google-search"], llm = llm)
-
+memory = ConversationBufferWindowMemory(memory_key="chat_history", return_messages=True, k=5)
+tools = load_tools([
+    "llm-math",
+    "google-search",
+    "wikipedia",
+    "open-meteo-api",
+    # "tmdb-api",
+    # "openweathermap-api",
+    ], llm = llm, tmdb_bearer_token = os.getenv('TMDB_BEARER_TOKEN'))
+tools.append(YouTubeSearchTool())
 # prompt = PromptTemplate(
 #     input_variables=["message"],
 #     template="User: {message}",
