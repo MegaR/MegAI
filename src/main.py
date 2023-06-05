@@ -32,9 +32,14 @@ class MyClient(discord.Client):
             message.clean_content.replace(
                 f'@{self.user.display_name}', '').strip()
         print(clean_message)
-        response = agent.run(input=clean_message)
-        print(response)
-        await self.chunk_reply(message, response)
+        try:
+            response = agent.run(input=clean_message)
+            print(response)
+            await self.chunk_reply(message, response)
+        except Exception as e:
+            print(e)
+            await message.reply("❌Sorry an error occured❌", mention_author=True)
+        
 
     async def chunk_reply(self, message, response):
         chunks = [response[i:i+1999] for i in range(0, len(response), 1999)]
