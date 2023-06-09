@@ -20,7 +20,7 @@ class MyCallBackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> Any:
         print(f"🔧 Tool {serialized['name']} started")
-        self.history += f"🔧 Tool {serialized['name']} used: ${input_str}\n"
+        self.history += f"🔧 Tool {serialized['name']} used: {input_str}\n"
 
 class MyClient(discord.Client):
     async def on_ready(self):
@@ -48,7 +48,7 @@ class MyClient(discord.Client):
             handler = MyCallBackHandler()
             response = agent.run(input=clean_message, callbacks=[handler]);
             print(response)
-            await statusMessage.edit(content=handler.history);
+            await statusMessage.edit(content=handler.history + '✅ Finished');
             await self.chunk_reply(message, response)
         except Exception as e:
             print(e)
