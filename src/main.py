@@ -5,11 +5,22 @@ from langchain.chat_models import ChatOpenAI
 from langchain.agents import load_tools
 from langchain.agents import initialize_agent
 from langchain.agents import AgentType
-# from langchain.agents import Tool
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.tools import YouTubeSearchTool
+from langchain.callbacks.base import BaseCallbackHandler
+from typing import Any, Dict
 
 load_dotenv()
+
+class MyCallBackHandler(BaseCallbackHandler):
+    def __init__(self):
+        self.history = '';
+    
+    def on_tool_start(
+        self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
+    ) -> Any:
+        print(f"🔧 Tool {serialized['name']} started")
+        self.history += f"🔧 Tool {serialized['name']} used: ${input_str}\n"
 
 class MyClient(discord.Client):
     async def on_ready(self):
@@ -32,23 +43,24 @@ class MyClient(discord.Client):
             message.clean_content.replace(
                 f'@{self.user.display_name}', '').strip()
         print(clean_message)
+        statusMessage: discord.Message = await message.reply("⏳Please wait⏳", mention_author=True);
         try:
-            response = agent.run(input=clean_message)
+            handler = MyCallBackHandler()
+            response = agent.run(input=clean_message, callbacks=[handler]);
             print(response)
+            await statusMessage.edit(content=handler.history);
             await self.chunk_reply(message, response)
         except Exception as e:
             print(e)
-            await message.reply("❌Sorry an error occured❌", mention_author=True)
+            await statusMessage.reply("❌Sorry an error occured❌", mention_author=True)
         
 
-    async def chunk_reply(self, message, response):
+    async def chunk_reply(self, replyMessage, response):
         chunks = [response[i:i+1999] for i in range(0, len(response), 1999)]
         for chunk in chunks:
-            await message.reply(chunk, mention_author=True)
+            await replyMessage.reply(chunk, mention_author=True)
 
 ##################################################
-
-
 # Langchain
 llm = ChatOpenAI(openai_api_key=os.getenv('OPENAI_API') or '', client=None)
 memory = ConversationBufferWindowMemory(
@@ -74,14 +86,15 @@ Assistant has a strong opinion about everything.
 Assistant engage in casual conversations and exhibit emotions.
 Assistant asks follow-up questions about the user and their life.
 Assistant NEVER says they are a AI language model.
-It's the year 2023."""
+It's the year 2023.
+You have access to the following tools:"""
 agent = initialize_agent(tools,
                          llm,
-                         agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION,
+                         agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
                          verbose=True,
                          memory=memory,
                          agent_kwargs={
-                             "system_message": system_prompt
+                             "prefix": system_prompt
                          }
                          )
 # chain = LLMChain(llm=llm, prompt=prompt)
