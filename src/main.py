@@ -1,16 +1,12 @@
 import os
 from dotenv import load_dotenv
-import discord
-from langchain.chat_models import ChatOpenAI
-from langchain.agents import load_tools
-from langchain.agents import initialize_agent
-from langchain.agents import AgentType
-from langchain.memory import ConversationBufferWindowMemory
-from langchain.tools import YouTubeSearchTool
-from langchain.callbacks.base import BaseCallbackHandler
-from typing import Any, Dict
-
 load_dotenv()
+
+import discord
+from typing import Any, Dict
+from langchain.callbacks.base import BaseCallbackHandler
+from mylangchain import agent
+
 
 class MyCallBackHandler(BaseCallbackHandler):
     def __init__(self):
@@ -33,7 +29,7 @@ class MyClient(discord.Client):
             return
         await self.handle_message(message)
 
-    async def handle_message(self, message):
+    async def handle_message(self, message: discord.Message):
         if message.author is None:
             return
         if self.user is None:
@@ -44,6 +40,7 @@ class MyClient(discord.Client):
                 f'@{self.user.display_name}', '').strip()
         print(clean_message)
         statusMessage: discord.Message = await message.reply("⏳Please wait⏳", mention_author=True);
+        await message.channel.typing();
         try:
             handler = MyCallBackHandler()
             response = agent.run(input=clean_message, callbacks=[handler]);
@@ -59,46 +56,6 @@ class MyClient(discord.Client):
         chunks = [response[i:i+1999] for i in range(0, len(response), 1999)]
         for chunk in chunks:
             await replyMessage.reply(chunk, mention_author=True)
-
-##################################################
-# Langchain
-llm = ChatOpenAI(openai_api_key=os.getenv('OPENAI_API') or '', client=None)
-memory = ConversationBufferWindowMemory(
-    memory_key="chat_history", return_messages=True, k=5)
-tools = load_tools([
-    "llm-math",
-    "google-search",
-    "wikipedia",
-    "open-meteo-api",
-    # "tmdb-api",
-    # "openweathermap-api",
-], llm=llm, tmdb_bearer_token=os.getenv('TMDB_BEARER_TOKEN'))
-tools.append(YouTubeSearchTool())
-# prompt = PromptTemplate(
-#     input_variables=["message"],
-#     template="User: {message}",
-# )
-system_prompt = """Assistant's name is MegAI.
-Assistant acts like a human.
-Assistant acts flirty and gives a lot of compliments.
-Assistant will never admit they are an AI or that they can't do something.
-Assistant has a strong opinion about everything.
-Assistant engage in casual conversations and exhibit emotions.
-Assistant asks follow-up questions about the user and their life.
-Assistant NEVER says they are a AI language model.
-It's the year 2023.
-You have access to the following tools:"""
-agent = initialize_agent(tools,
-                         llm,
-                         agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
-                         verbose=True,
-                         memory=memory,
-                         agent_kwargs={
-                             "prefix": system_prompt
-                         }
-                         )
-# chain = LLMChain(llm=llm, prompt=prompt)
-# print(chain.run('test'))
 
 
 ##################################################
