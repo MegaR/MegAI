@@ -1,0 +1,27 @@
+{
+  "name": "megai",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./build/index.js",
+    "build": "rimraf ./build && tsc",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:dev": "nodemon"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MegaR/MegAI.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MegaR/MegAI/issues"
+  },
+  "homepage": "https://github.com/MegaR/MegAI#readme",
+  "devDependencies": {
+    "@types/node": "^20.3.1",
+    "rimraf": "^5.0.1",
+    "typescript": "^5.1.3"
+  }
+}
