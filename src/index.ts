@@ -92,7 +92,7 @@ async function chunkedReply(
     progress: string[]
 ) {
     const chunks = reply.match(/[\s\S]{1,4096}/g);
-    if (!chunks) throw new Error("No failed chunk reply");
+    if (!chunks) throw new Error("Failed chunk reply");
     for (const chunk of chunks) {
         let embed = new EmbedBuilder().setDescription(chunk);
         if (progress.length > 0) {
