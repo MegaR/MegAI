@@ -8,6 +8,8 @@ import Tool from "./tool.interface";
 import googleTool from "./tools/google.tool";
 import wikipediaTool from "./tools/wikipedia.tool";
 
+type progressCallback = (update: string) => Promise<void>;
+
 export class OpenAiWrapper {
     private openai?: OpenAIApi;
     private tools: Tool[] = [googleTool, wikipediaTool];
@@ -21,11 +23,21 @@ export class OpenAiWrapper {
         this.openai = new OpenAIApi(configuration);
     }
 
-    async reply(username: string, message: string): Promise<string> {
-        return await this.chatCompletion([{ role: "user", name: username, content: message }]);
+    async reply(
+        username: string,
+        message: string,
+        progress: progressCallback
+    ): Promise<string> {
+        return await this.chatCompletion(
+            [{ role: "user", name: username, content: message }],
+            progress
+        );
     }
 
-    private async chatCompletion(messages: ChatCompletionRequestMessage[]): Promise<string> {
+    private async chatCompletion(
+        messages: ChatCompletionRequestMessage[],
+        progress: progressCallback
+    ): Promise<string> {
         const completion = await this.openai?.createChatCompletion({
             model: "gpt-3.5-turbo-0613",
             temperature: 0.5,
@@ -39,26 +51,38 @@ export class OpenAiWrapper {
         if (!aiMessage) throw new Error("No ai message");
 
         if (aiMessage.function_call) {
-            const toolResponse = await this.handleFunctionCall(aiMessage);
-            return await this.chatCompletion([...messages, ...toolResponse]);
+            const toolResponse = await this.handleFunctionCall(
+                aiMessage,
+                progress
+            );
+            return await this.chatCompletion(
+                [...messages, ...toolResponse],
+                progress
+            );
         }
-        
+
         console.log(`[${this.botName}] ${aiMessage.content}`);
         return aiMessage.content!;
     }
 
     private async handleFunctionCall(
-        aiMessage: ChatCompletionResponseMessage
+        aiMessage: ChatCompletionResponseMessage,
+        progress: progressCallback
     ): Promise<ChatCompletionRequestMessage[]> {
         const tool = this.tools.find(
             (tool) => tool.definition.name === aiMessage.function_call!.name
         );
         if (!tool) throw new Error("No tool found");
-        console.log(`[${tool.definition.name}] ${aiMessage.function_call!.arguments}`);
-
         const parameters = JSON.parse(aiMessage.function_call!.arguments!);
+
+        console.log(`🔧${tool.definition.name}: ${JSON.stringify(parameters)}`);
+        await progress(
+            `🔧${tool.definition.name}: \`${JSON.stringify(parameters)}\``
+        );
+
         const toolOutput = await tool.execute(parameters);
         console.log(toolOutput);
+
         return [
             aiMessage,
             {

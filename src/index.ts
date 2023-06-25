@@ -1,15 +1,20 @@
 import "dotenv/config";
-import { Client, EmbedBuilder, GatewayIntentBits, Message, Routes, hyperlink } from "discord.js";
+import {
+    Client,
+    EmbedBuilder,
+    GatewayIntentBits,
+    Message,
+    Routes,
+    hyperlink,
+} from "discord.js";
 import { OpenAiWrapper } from "./openaiwrapper";
-
-// const personality = `Your name is BOTNAME`;
 
 async function start() {
     const client = await setupDiscord();
     const ai = new OpenAiWrapper(client.user?.username!);
     await ai.setup();
     client.on("messageCreate", async (message) => {
-        if(message.author.bot) return;
+        if (message.author.bot) return;
         if (message.content === "!ping") {
             await message.reply("Pong!");
         }
@@ -20,12 +25,24 @@ async function start() {
 }
 
 async function handleMention(message: Message<boolean>, ai: OpenAiWrapper) {
-    const reply = await message.reply("I'm thinking...⌛");
+    const reply = await message.reply({
+        embeds: [new EmbedBuilder().setTitle("I'm thinking...⌛")],
+    });
+
     try {
         const user = message.member?.displayName || message.author.username;
         console.log(`[${user}] ${message.cleanContent}`);
-        const response = await ai.reply(user, message.cleanContent);
-        await chunkedReply(reply, response);
+        let progress: string[] = [];
+        const response = await ai.reply(
+            user,
+            message.cleanContent,
+            async (p) => {
+                progress.push(p);
+                await progressUpdate(reply, progress);
+            }
+        );
+        reply.delete();
+        await chunkedReply(message, response, progress);
     } catch (error) {
         if ((error as any).response) {
             console.error((error as any).response.data);
@@ -34,6 +51,16 @@ async function handleMention(message: Message<boolean>, ai: OpenAiWrapper) {
         }
         reply.edit("❌ Something went wrong. 😢");
     }
+}
+
+async function progressUpdate(message: Message<boolean>, progress: string[]) {
+    await message.edit({
+        embeds: [
+            new EmbedBuilder()
+                .setTitle("I'm thinking...⌛")
+                .setDescription(progress.join("\n")),
+        ],
+    });
 }
 
 async function setupDiscord() {
@@ -52,19 +79,26 @@ async function setupDiscord() {
     });
 
     await client.login(process.env.DISCORD_TOKEN);
-    // await client.rest.put(
-    //     Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!),
-    //     { body: [] }
-    // );
+    await client.rest.put(
+        Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!),
+        { body: [] }
+    );
     return client;
 }
 
-async function chunkedReply(message: Message<boolean>, reply: string) {
+async function chunkedReply(
+    message: Message<boolean>,
+    reply: string,
+    progress: string[]
+) {
     const chunks = reply.match(/[\s\S]{1,4096}/g);
     if (!chunks) throw new Error("No failed chunk reply");
-    for(const chunk of chunks) {
-        const embed = new EmbedBuilder().setDescription(chunk);
-        await message.reply({ embeds: [embed]});
+    for (const chunk of chunks) {
+        let embed = new EmbedBuilder().setDescription(chunk);
+        if (progress.length > 0) {
+            embed = embed.setFooter({ text: progress.join("\n") });
+        }
+        await message.reply({ embeds: [embed] });
     }
 }
 
