@@ -7,12 +7,14 @@ import {
 import Tool from "./tool.interface";
 import googleTool from "./tools/google.tool";
 import wikipediaTool from "./tools/wikipedia.tool";
+import HistoryManager from "./historymanager";
 
 type progressCallback = (update: string) => Promise<void>;
 
 export class OpenAiWrapper {
     private openai?: OpenAIApi;
     private tools: Tool[] = [googleTool, wikipediaTool];
+    private history = new HistoryManager();
 
     constructor(private readonly botName: string) {}
 
@@ -25,11 +27,13 @@ export class OpenAiWrapper {
 
     async reply(
         username: string,
-        message: string,
+        prompt: string,
         progress: progressCallback
     ): Promise<string> {
+        const message: ChatCompletionRequestMessage = { role: "user", name: username, content: prompt };
+        this.history.addMessage(message);
         return await this.chatCompletion(
-            [{ role: "user", name: username, content: message }],
+            this.history.getHistory(),
             progress
         );
     }
@@ -61,6 +65,7 @@ export class OpenAiWrapper {
             );
         }
 
+        this.history.addMessage(aiMessage);
         console.log(`[${this.botName}] ${aiMessage.content}`);
         return aiMessage.content!;
     }
