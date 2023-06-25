@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { Client, GatewayIntentBits, Message, Routes } from "discord.js";
+import { Client, GatewayIntentBits, Message, Routes, hyperlink } from "discord.js";
 import { OpenAiWrapper } from "./openaiwrapper";
 
 // const personality = `Your name is BOTNAME`;
@@ -9,6 +9,7 @@ async function start() {
     const ai = new OpenAiWrapper(client.user?.username!);
     await ai.setup();
     client.on("messageCreate", async (message) => {
+        if(message.author.bot) return;
         if (message.content === "!ping") {
             await message.reply("Pong!");
         }
@@ -22,8 +23,9 @@ async function handleMention(message: Message<boolean>, ai: OpenAiWrapper) {
     const reply = await message.reply("I'm thinking...⌛");
     try {
         const user = message.member?.displayName || message.author.username;
+        console.log(`[${user}] ${message.cleanContent}`);
         const response = await ai.reply(user, message.cleanContent);
-        reply.edit(response);
+        await chunkedReply(reply, response);
     } catch (error) {
         if ((error as any).response) {
             console.error((error as any).response.data);
@@ -55,6 +57,14 @@ async function setupDiscord() {
     //     { body: [] }
     // );
     return client;
+}
+
+async function chunkedReply(message: Message<boolean>, reply: string) {
+    const chunks = reply.match(/[\s\S]{1,2000}/g);
+    if (!chunks) throw new Error("No failed chunk reply");
+    for(const chunk of chunks) {
+        await message.reply({ content: chunk});
+    }
 }
 
 start();

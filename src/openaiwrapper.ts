@@ -5,11 +5,11 @@ import {
     OpenAIApi,
 } from "openai";
 import Tool from "./tool.interface";
-import replyTool from "./tools/reply.tool";
+import googleTool from "./tools/google.tool";
 
 export class OpenAiWrapper {
     private openai?: OpenAIApi;
-    private tools: Tool[] = [replyTool];
+    private tools: Tool[] = [googleTool];
 
     constructor(private readonly botName: string) {}
 
@@ -40,6 +40,7 @@ export class OpenAiWrapper {
             const toolResponse = await this.handleFunctionCall(aiMessage);
             return await this.chatCompletion([...messages, ...toolResponse]);
         }
+        console.log(`[${this.botName}] ${aiMessage.content}`);
         return aiMessage.content!;
     }
 
@@ -50,9 +51,11 @@ export class OpenAiWrapper {
             (tool) => tool.definition.name === aiMessage.function_call!.name
         );
         if (!tool) throw new Error("No tool found");
+        console.log(`[${tool.definition.name}] ${aiMessage.function_call!.arguments}`);
 
         const parameters = JSON.parse(aiMessage.function_call!.arguments!);
         const toolOutput = await tool.execute(parameters);
+        console.log(toolOutput);
         return [
             aiMessage,
             {
