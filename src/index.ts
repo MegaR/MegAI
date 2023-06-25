@@ -2,9 +2,11 @@ import "dotenv/config";
 import { Client, GatewayIntentBits, Message, Routes } from "discord.js";
 import { OpenAiWrapper } from "./openaiwrapper";
 
+// const personality = `Your name is BOTNAME`;
+
 async function start() {
     const client = await setupDiscord();
-    const ai = new OpenAiWrapper();
+    const ai = new OpenAiWrapper(client.user?.username!);
     await ai.setup();
     client.on("messageCreate", async (message) => {
         if (message.content === "!ping") {
@@ -48,10 +50,10 @@ async function setupDiscord() {
     });
 
     await client.login(process.env.DISCORD_TOKEN);
-    await client.rest.put(
-        Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!),
-        { body: [] }
-    );
+    // await client.rest.put(
+    //     Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!),
+    //     { body: [] }
+    // );
     return client;
 }
 
