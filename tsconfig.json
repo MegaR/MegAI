@@ -1,10 +1,14 @@
 {
   "include": ["src/**/*"],
+  "exclude": ["node_modules", "build"],
   "compilerOptions": {
+    "incremental": true,
     "target": "es2016",
     "lib": ["es6"],
     "module": "commonjs",
     "rootDir": "src",
+    "sourceRoot": "src",
+    "inlineSourceMap": true,
     "resolveJsonModule": true,
     "allowJs": true,
     "outDir": "build",
@@ -13,5 +17,5 @@
     "strict": true,
     "noImplicitAny": true,
     "skipLibCheck": true,
-  }
+  },
 }
