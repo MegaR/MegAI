@@ -8,12 +8,13 @@ import Tool from "./tool.interface";
 import googleTool from "./tools/google.tool";
 import wikipediaTool from "./tools/wikipedia.tool";
 import HistoryManager from "./historymanager";
+import mathTool from "./tools/math.tool";
 
 type progressCallback = (update: string) => Promise<void>;
 
 export class OpenAiWrapper {
     private openai?: OpenAIApi;
-    private tools: Tool[] = [googleTool, wikipediaTool];
+    private tools: Tool[] = [googleTool, wikipediaTool, mathTool];
     private history = new HistoryManager();
 
     constructor(private readonly botName: string) {}
@@ -77,7 +78,7 @@ export class OpenAiWrapper {
         const tool = this.tools.find(
             (tool) => tool.definition.name === aiMessage.function_call!.name
         );
-        if (!tool) throw new Error("No tool found");
+        if (!tool) throw new Error(`Tool ${aiMessage.function_call?.name} not found`);
         const parameters = JSON.parse(aiMessage.function_call!.arguments!);
 
         console.log(`🔧${tool.definition.name}: ${JSON.stringify(parameters)}`);
