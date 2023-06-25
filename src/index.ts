@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { Client, GatewayIntentBits, Message, Routes, hyperlink } from "discord.js";
+import { Client, EmbedBuilder, GatewayIntentBits, Message, Routes, hyperlink } from "discord.js";
 import { OpenAiWrapper } from "./openaiwrapper";
 
 // const personality = `Your name is BOTNAME`;
@@ -60,10 +60,11 @@ async function setupDiscord() {
 }
 
 async function chunkedReply(message: Message<boolean>, reply: string) {
-    const chunks = reply.match(/[\s\S]{1,2000}/g);
+    const chunks = reply.match(/[\s\S]{1,4096}/g);
     if (!chunks) throw new Error("No failed chunk reply");
     for(const chunk of chunks) {
-        await message.reply({ content: chunk});
+        const embed = new EmbedBuilder().setDescription(chunk);
+        await message.reply({ embeds: [embed]});
     }
 }
 

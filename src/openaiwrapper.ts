@@ -6,10 +6,11 @@ import {
 } from "openai";
 import Tool from "./tool.interface";
 import googleTool from "./tools/google.tool";
+import wikipediaTool from "./tools/wikipedia.tool";
 
 export class OpenAiWrapper {
     private openai?: OpenAIApi;
-    private tools: Tool[] = [googleTool];
+    private tools: Tool[] = [googleTool, wikipediaTool];
 
     constructor(private readonly botName: string) {}
 
@@ -32,6 +33,7 @@ export class OpenAiWrapper {
             functions: this.tools.map((tool) => tool.definition),
             function_call: "auto",
         });
+
         if (!completion) throw new Error("No completion");
         const aiMessage = completion.data.choices[0].message;
         if (!aiMessage) throw new Error("No ai message");
@@ -40,6 +42,7 @@ export class OpenAiWrapper {
             const toolResponse = await this.handleFunctionCall(aiMessage);
             return await this.chatCompletion([...messages, ...toolResponse]);
         }
+        
         console.log(`[${this.botName}] ${aiMessage.content}`);
         return aiMessage.content!;
     }
