@@ -9,12 +9,13 @@ import googleTool from "./tools/google.tool";
 import wikipediaTool from "./tools/wikipedia.tool";
 import HistoryManager from "./historymanager";
 import mathTool from "./tools/math.tool";
+import stableHordeTool from "./tools/stablehorde.tool";
 
 type progressCallback = (update: string) => Promise<void>;
 
 export class OpenAiWrapper {
     private openai?: OpenAIApi;
-    private tools: Tool[] = [googleTool, wikipediaTool, mathTool];
+    private tools: Tool[] = [googleTool, wikipediaTool, mathTool, stableHordeTool];
     private history = new HistoryManager();
 
     constructor(private readonly botName: string) {}
@@ -81,9 +82,9 @@ export class OpenAiWrapper {
         if (!tool) throw new Error(`Tool ${aiMessage.function_call?.name} not found`);
         const parameters = JSON.parse(aiMessage.function_call!.arguments!);
 
-        console.log(`🔧${tool.definition.name}: ${JSON.stringify(parameters)}`);
+        console.log(`🔧 ${tool.definition.name}: ${JSON.stringify(parameters)}`);
         await progress(
-            `🔧${tool.definition.name}: \`${JSON.stringify(parameters)}\``
+            `🔧 ${tool.definition.name}: \`${JSON.stringify(parameters)}\``
         );
 
         const toolOutput = await tool.execute(parameters);

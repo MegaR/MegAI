@@ -98,6 +98,11 @@ async function chunkedReply(
         if (progress.length > 0) {
             embed = embed.setFooter({ text: progress.join("\n") });
         }
+        const regex = /\((https:\/\/.*?.cloudflarestorage\.com\/stable-horde.*?)\)/g;
+        const match = regex.exec(chunk);
+        if(match) {
+            embed = embed.setImage(match[1]);
+        }
         await message.reply({ embeds: [embed] });
     }
 }
