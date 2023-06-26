@@ -34,8 +34,10 @@ async function requestImage(prompt: string, model: Model): Promise<string> {
             prompt: prompt,
             params: {
                 steps: 60,
-                width: 512,
-                height: 512,
+                width: 768,
+                height: 768,
+                hires_fix: true,
+                karras: true,
             },
             models: [model.model],
         },
@@ -78,11 +80,11 @@ const stableHordeTool: Tool = {
                 prompt: {
                     type: "string",
                     description:
-                        "short keywords describing the image. Each keyword should be separated by a comma. For example: 'woman, red hair, smiling, photo-realistic, portrait'",
+                        "prompt describing the image. Each part should be separated by a comma. Use aleast 5 keywords. For example: 'beautiful woman, red hair, smiling, walking in a park, photo-realistic, portrait'",
                 },
                 model: {
                     type: "string",
-                    description: "The model defines the style of the image.",
+                    description: "The model defines the style of the image. Use 'photography' for pictures of real things",
                     enum: models.map((model) => model.name),
                 },
             },
