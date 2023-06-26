@@ -84,11 +84,12 @@ const stableHordeTool: Tool = {
                 },
                 model: {
                     type: "string",
-                    description: "The model defines the style of the image. Use 'photography' for pictures of real things",
+                    description:
+                        "The model defines the style of the image. Use 'photography' for pictures of real things",
                     enum: models.map((model) => model.name),
                 },
             },
-            required: ["prompt"],
+            required: ["prompt", "model"],
         },
     },
     execute: async (parameters: any) => {
