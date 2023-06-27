@@ -15,7 +15,12 @@ type progressCallback = (update: string) => Promise<void>;
 
 export class OpenAiWrapper {
     private openai?: OpenAIApi;
-    private tools: Tool[] = [googleTool, wikipediaTool, mathTool, stableHordeTool];
+    private tools: Tool[] = [
+        googleTool,
+        wikipediaTool,
+        mathTool,
+        stableHordeTool,
+    ];
     private history = new HistoryManager();
 
     constructor(private readonly botName: string) {}
@@ -32,25 +37,35 @@ export class OpenAiWrapper {
         prompt: string,
         progress: progressCallback
     ): Promise<string> {
-        const message: ChatCompletionRequestMessage = { role: "user", name: username, content: prompt };
+        const message: ChatCompletionRequestMessage = {
+            role: "user",
+            name: username,
+            content: prompt,
+        };
         this.history.addMessage(message);
-        return await this.chatCompletion(
-            this.history.getHistory(),
-            progress
-        );
+        return await this.chatCompletion(this.history.getHistory(), progress);
     }
 
     private async chatCompletion(
         messages: ChatCompletionRequestMessage[],
         progress: progressCallback
     ): Promise<string> {
-        const completion = await this.openai?.createChatCompletion({
-            model: "gpt-3.5-turbo-0613",
-            temperature: 0.5,
-            messages: messages,
-            functions: this.tools.map((tool) => tool.definition),
-            function_call: "auto",
-        });
+        let completion;
+        try {
+            completion = await this.openai?.createChatCompletion({
+                model: "gpt-3.5-turbo-0613",
+                temperature: 0.5,
+                messages: messages,
+                functions: this.tools.map((tool) => tool.definition),
+                function_call: "auto",
+            });
+        } catch (e: any) {
+            if (e?.response?.data?.error?.type === "server_error") {
+                console.log("Server error. Retrying...");
+                return await this.chatCompletion(messages, progress);
+            }
+            throw e;
+        }
 
         if (!completion) throw new Error("No completion");
         const aiMessage = completion.data.choices[0].message;
@@ -79,10 +94,22 @@ export class OpenAiWrapper {
         const tool = this.tools.find(
             (tool) => tool.definition.name === aiMessage.function_call!.name
         );
-        if (!tool) throw new Error(`Tool ${aiMessage.function_call?.name} not found`);
+        if (!tool) {
+            console.warn(`❌ unknown tool ${aiMessage.function_call!.name}`);
+            return [
+                aiMessage,
+                {
+                    role: "function",
+                    name: aiMessage.function_call!.name,
+                    content: '❌ unknown function',
+                },
+            ];
+        }
         const parameters = JSON.parse(aiMessage.function_call!.arguments!);
 
-        console.log(`🔧 ${tool.definition.name}: ${JSON.stringify(parameters)}`);
+        console.log(
+            `🔧 ${tool.definition.name}: ${JSON.stringify(parameters)}`
+        );
         await progress(
             `🔧 ${tool.definition.name}: \`${JSON.stringify(parameters)}\``
         );

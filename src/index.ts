@@ -45,7 +45,7 @@ async function handleMention(message: Message<boolean>, ai: OpenAiWrapper) {
         await chunkedReply(message, response, progress);
     } catch (error) {
         if ((error as any).response) {
-            console.error((error as any).response.data);
+            console.error("network error: ", (error as any)?.response?.data);
         } else {
             console.error(error);
         }
@@ -98,9 +98,10 @@ async function chunkedReply(
         if (progress.length > 0) {
             embed = embed.setFooter({ text: progress.join("\n") });
         }
-        const regex = /\((https:\/\/.*?.cloudflarestorage\.com\/stable-horde.*?)\)/g;
+        const regex =
+            /\((https:\/\/.*?.cloudflarestorage\.com\/stable-horde.*?)\)/g;
         const match = regex.exec(chunk);
-        if(match) {
+        if (match) {
             embed = embed.setImage(match[1]);
         }
         await message.reply({ embeds: [embed] });

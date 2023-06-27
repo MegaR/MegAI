@@ -10,10 +10,10 @@ interface Model {
 const stableHordeApiKey = process.env.STABLE_HORDE;
 
 const models: Model[] = [
-    {
-        name: "default",
-        model: "stable_diffusion",
-    },
+    // {
+    //     name: "default",
+    //     model: "stable_diffusion",
+    // },
     {
         name: "anime",
         model: "Anything Diffusion",
@@ -80,7 +80,7 @@ const stableHordeTool: Tool = {
                 prompt: {
                     type: "string",
                     description:
-                        "prompt describing the image. Each part should be separated by a comma. Use aleast 5 keywords. For example: 'beautiful woman, red hair, smiling, walking in a park, photo-realistic, portrait'",
+                        "prompt describing the image. Each part should be separated by a comma. Use aleast 5 keywords. For example: 'beautiful woman, red hair, smiling, walking in a park, photo-realistic, portrait, bright colors'",
                 },
                 model: {
                     type: "string",
