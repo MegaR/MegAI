@@ -1,5 +1,7 @@
+import { IncomingMessage } from "http";
 import Tool from "../tool.interface";
 import axios from "axios";
+import { Session } from "../session.interface";
 
 interface Model {
     name: string;
@@ -23,6 +25,44 @@ const models: Model[] = [
         model: "ICBINP - I Can't Believe It's Not Photography",
     },
 ];
+
+const stableHordeTool: Tool = {
+    definition: {
+        name: "image_generator",
+        description: "Generate an image based on a prompt",
+        parameters: {
+            type: "object",
+            properties: {
+                prompt: {
+                    type: "string",
+                    description:
+                        "prompt describing the image. Each part should be separated by a comma. Use aleast 5 keywords. For example: 'beautiful woman, red hair, smiling, walking in a park, photo-realistic, portrait, bright colors'",
+                },
+                model: {
+                    type: "string",
+                    description:
+                        "The model defines the style of the image. Use 'photography' for pictures of real things",
+                    enum: models.map((model) => model.name),
+                },
+            },
+            required: ["prompt", "model"],
+        },
+    },
+    execute: async (parameters: any, session: Session) => {
+        let model = models[0];
+        if (parameters.prompt) {
+            model =
+                models.find((model) => model.name === parameters.model) ||
+                models[0];
+        }
+        const id = await requestImage(parameters.prompt, model);
+        console.log(`StableHorde image id: ${id}`);
+        const url = await waitForResult(id);
+        const stream = await downloadImage(url);
+        session.attachments.push(stream);
+        return url;
+    },
+};
 
 async function requestImage(prompt: string, model: Model): Promise<string> {
     if (model.token) {
@@ -70,40 +110,9 @@ async function sleep(time: number) {
     return new Promise((resolve) => setTimeout(resolve, time || 10000));
 }
 
-const stableHordeTool: Tool = {
-    definition: {
-        name: "image_generator",
-        description: "Generate an image based on a prompt",
-        parameters: {
-            type: "object",
-            properties: {
-                prompt: {
-                    type: "string",
-                    description:
-                        "prompt describing the image. Each part should be separated by a comma. Use aleast 5 keywords. For example: 'beautiful woman, red hair, smiling, walking in a park, photo-realistic, portrait, bright colors'",
-                },
-                model: {
-                    type: "string",
-                    description:
-                        "The model defines the style of the image. Use 'photography' for pictures of real things",
-                    enum: models.map((model) => model.name),
-                },
-            },
-            required: ["prompt", "model"],
-        },
-    },
-    execute: async (parameters: any) => {
-        let model = models[0];
-        if (parameters.prompt) {
-            model =
-                models.find((model) => model.name === parameters.model) ||
-                models[0];
-        }
-        const id = await requestImage(parameters.prompt, model);
-        console.log(`StableHorde image id: ${id}`);
-        const image = await waitForResult(id);
-        return image;
-    },
-};
+async function downloadImage(url: string): Promise<IncomingMessage> {
+    const response = await axios.get(url, {responseType: 'arraybuffer'});
+    return response.data;
+}
 
 export default stableHordeTool;

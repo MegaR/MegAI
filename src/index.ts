@@ -1,13 +1,17 @@
 import "dotenv/config";
 import {
+    AttachmentBuilder,
+    AttachmentPayload,
     Client,
     EmbedBuilder,
     GatewayIntentBits,
+    JSONEncodable,
     Message,
+    RawFile,
     Routes,
-    hyperlink,
 } from "discord.js";
 import { OpenAiWrapper } from "./openaiwrapper";
+import { Session } from "./session.interface";
 
 async function start() {
     const client = await setupDiscord();
@@ -24,6 +28,11 @@ async function start() {
     });
 }
 
+function formatPrompt(user: string, message: Message<boolean>) {
+    const timestamp = new Date().toISOString();
+    return `[${timestamp}]${user}: ${message.cleanContent}`;
+}
+
 async function handleMention(message: Message<boolean>, ai: OpenAiWrapper) {
     const reply = await message.reply({
         embeds: [new EmbedBuilder().setTitle("I'm thinking...⌛")],
@@ -31,18 +40,12 @@ async function handleMention(message: Message<boolean>, ai: OpenAiWrapper) {
 
     try {
         const user = message.member?.displayName || message.author.username;
-        console.log(`[${user}] ${message.cleanContent}`);
-        let progress: string[] = [];
-        const response = await ai.reply(
-            user,
-            message.cleanContent,
-            async (p) => {
-                progress.push(p);
-                await progressUpdate(reply, progress);
-            }
-        );
-        reply.delete();
-        await chunkedReply(message, response, progress);
+        const prompt = formatPrompt(user, message);
+        console.log(prompt);
+
+        await ai.reply(user, message.cleanContent, async (s) => {
+            await updateMessage(reply, s);
+        });
     } catch (error) {
         if ((error as any).response) {
             console.error("network error: ", (error as any)?.response?.data);
@@ -53,13 +56,29 @@ async function handleMention(message: Message<boolean>, ai: OpenAiWrapper) {
     }
 }
 
-async function progressUpdate(message: Message<boolean>, progress: string[]) {
+async function updateMessage(message: Message<boolean>, session: Session) {
+    let embed = new EmbedBuilder();
+    let files: AttachmentBuilder[] = [];
+    
+    if(session.responses.length > 0) {
+        embed = embed.setDescription(session.responses.join("\n"));
+    }
+
+    if (session.footer.length > 0) {
+        embed = embed.setFooter({ text: session.footer.join("\n") });
+    }
+
+    if(session.attachments.length > 0) {
+        for(let i = 0; i < session.attachments.length; i++) {
+            const file = new AttachmentBuilder(session.attachments[i], {name: `image${i}.png`});
+            embed = embed.setImage(`attachment://image${i}.png`);
+            files.push(file);
+        }
+    }
+
     await message.edit({
-        embeds: [
-            new EmbedBuilder()
-                .setTitle("I'm thinking...⌛")
-                .setDescription(progress.join("\n")),
-        ],
+        embeds: [embed],
+        files: files,
     });
 }
 
@@ -84,28 +103,6 @@ async function setupDiscord() {
         { body: [] }
     );
     return client;
-}
-
-async function chunkedReply(
-    message: Message<boolean>,
-    reply: string,
-    progress: string[]
-) {
-    const chunks = reply.match(/[\s\S]{1,4096}/g);
-    if (!chunks) throw new Error("Failed chunk reply");
-    for (const chunk of chunks) {
-        let embed = new EmbedBuilder().setDescription(chunk);
-        if (progress.length > 0) {
-            embed = embed.setFooter({ text: progress.join("\n") });
-        }
-        const regex =
-            /\((https:\/\/.*?.cloudflarestorage\.com\/stable-horde.*?)\)/g;
-        const match = regex.exec(chunk);
-        if (match) {
-            embed = embed.setImage(match[1]);
-        }
-        await message.reply({ embeds: [embed] });
-    }
 }
 
 start();

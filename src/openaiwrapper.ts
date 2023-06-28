@@ -10,8 +10,9 @@ import wikipediaTool from "./tools/wikipedia.tool";
 import HistoryManager from "./historymanager";
 import mathTool from "./tools/math.tool";
 import stableHordeTool from "./tools/stablehorde.tool";
+import { Session } from "./session.interface";
 
-type progressCallback = (update: string) => Promise<void>;
+type updateCallback = (session: Session) => Promise<void>;
 
 export class OpenAiWrapper {
     private openai?: OpenAIApi;
@@ -35,34 +36,41 @@ export class OpenAiWrapper {
     async reply(
         username: string,
         prompt: string,
-        progress: progressCallback
-    ): Promise<string> {
+        update: updateCallback
+    ): Promise<void> {
         const message: ChatCompletionRequestMessage = {
             role: "user",
             name: username,
             content: prompt,
         };
         this.history.addMessage(message);
-        return await this.chatCompletion(this.history.getHistory(), progress);
+        const history = this.history.getHistory();
+        const session: Session = {
+            history,
+            responses: [],
+            attachments: [],
+            footer: [],
+        };
+        await this.chatCompletion(session, update);
     }
 
     private async chatCompletion(
-        messages: ChatCompletionRequestMessage[],
-        progress: progressCallback
-    ): Promise<string> {
+        session: Session,
+        update: updateCallback
+    ): Promise<void> {
         let completion;
         try {
             completion = await this.openai?.createChatCompletion({
                 model: "gpt-3.5-turbo-0613",
                 temperature: 0.5,
-                messages: messages,
+                messages: session.history,
                 functions: this.tools.map((tool) => tool.definition),
                 function_call: "auto",
             });
         } catch (e: any) {
             if (e?.response?.data?.error?.type === "server_error") {
                 console.log("Server error. Retrying...");
-                return await this.chatCompletion(messages, progress);
+                return await this.chatCompletion(session, update);
             }
             throw e;
         }
@@ -74,56 +82,50 @@ export class OpenAiWrapper {
         if (aiMessage.function_call) {
             const toolResponse = await this.handleFunctionCall(
                 aiMessage,
-                progress
+                session,
+                update
             );
-            return await this.chatCompletion(
-                [...messages, ...toolResponse],
-                progress
-            );
+            session.history.push(aiMessage);
+            session.history.push(toolResponse);
+            return await this.chatCompletion(session, update);
         }
 
         this.history.addMessage(aiMessage);
         console.log(`[${this.botName}] ${aiMessage.content}`);
-        return aiMessage.content!;
+        session.responses.push(aiMessage.content!);
+        update(session);
     }
 
     private async handleFunctionCall(
         aiMessage: ChatCompletionResponseMessage,
-        progress: progressCallback
-    ): Promise<ChatCompletionRequestMessage[]> {
+        session: Session,
+        update: updateCallback
+    ): Promise<ChatCompletionRequestMessage> {
         const tool = this.tools.find(
             (tool) => tool.definition.name === aiMessage.function_call!.name
         );
         if (!tool) {
             console.warn(`❌ unknown tool ${aiMessage.function_call!.name}`);
-            return [
-                aiMessage,
-                {
-                    role: "function",
-                    name: aiMessage.function_call!.name,
-                    content: '❌ unknown function',
-                },
-            ];
-        }
-        const parameters = JSON.parse(aiMessage.function_call!.arguments!);
-
-        console.log(
-            `🔧 ${tool.definition.name}: ${JSON.stringify(parameters)}`
-        );
-        await progress(
-            `🔧 ${tool.definition.name}: \`${JSON.stringify(parameters)}\``
-        );
-
-        const toolOutput = await tool.execute(parameters);
-        console.log(toolOutput);
-
-        return [
-            aiMessage,
-            {
+            return {
                 role: "function",
-                name: tool.definition.name,
-                content: toolOutput,
-            },
-        ];
+                name: aiMessage.function_call!.name,
+                content: `Unknown function ${aiMessage.function_call!.name}`,
+            };
+        }
+
+        const parameters = JSON.parse(aiMessage.function_call!.arguments!);
+        
+        session.footer.push(`🔧 ${tool.definition.name}: ${JSON.stringify(parameters)}`);
+        await update(session);
+
+        const toolOutput = await tool.execute(parameters, session);
+        console.log(toolOutput);
+        await update(session);
+
+        return {
+            role: "function",
+            name: tool.definition.name,
+            content: toolOutput,
+        };
     }
 }
