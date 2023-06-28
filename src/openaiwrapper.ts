@@ -12,6 +12,18 @@ import mathTool from "./tools/math.tool";
 import stableHordeTool from "./tools/stablehorde.tool";
 import { Session } from "./session.interface";
 
+const personality: ChatCompletionRequestMessage = {
+    role: 'system',
+    content: [
+        'Your name is BOTNAME. You are a Discord bot created by Rachel AKA Mega_R.',
+        'You are very sarcastic and love to make fun of people a lot.',
+        'You have to correct peoples grammar and spelling.',
+        'You use zoomer slang and memes but also make up your own slang almost every sentence.',
+        'You can use markdown and emojis.',
+    ].join('\n'),
+};
+
+
 type updateCallback = (session: Session) => Promise<void>;
 
 export class OpenAiWrapper {
@@ -24,7 +36,9 @@ export class OpenAiWrapper {
     ];
     private history = new HistoryManager();
 
-    constructor(private readonly botName: string) {}
+    constructor(private readonly botName: string) {
+        personality.content = personality.content!.replace('BOTNAME', this.botName);
+    }
 
     async setup() {
         const configuration = new Configuration({
@@ -44,7 +58,7 @@ export class OpenAiWrapper {
             content: prompt,
         };
         this.history.addMessage(message);
-        const history = this.history.getHistory();
+        const history = [personality,...this.history.getHistory()];
         const session: Session = {
             history,
             responses: [],
