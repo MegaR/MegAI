@@ -110,7 +110,7 @@ async function sleep(time: number) {
     return new Promise((resolve) => setTimeout(resolve, time || 10000));
 }
 
-async function downloadImage(url: string): Promise<IncomingMessage> {
+async function downloadImage(url: string): Promise<any> {
     const response = await axios.get(url, {responseType: 'arraybuffer'});
     return response.data;
 }

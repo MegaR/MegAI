@@ -1,9 +1,10 @@
+import { BufferResolvable } from "discord.js";
 import { ChatCompletionRequestMessage } from "openai";
-import { IncomingMessage } from "node:http";
+import { Stream } from "stream";
 
 export interface Session {
     responses: string[];
     history: ChatCompletionRequestMessage[];
-    attachments: IncomingMessage[];
+    attachments: BufferResolvable[] | Stream[];
     footer: string[];
 }

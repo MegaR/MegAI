@@ -1,13 +1,10 @@
 import "dotenv/config";
 import {
     AttachmentBuilder,
-    AttachmentPayload,
     Client,
     EmbedBuilder,
     GatewayIntentBits,
-    JSONEncodable,
     Message,
-    RawFile,
     Routes,
 } from "discord.js";
 import { OpenAiWrapper } from "./openaiwrapper";
