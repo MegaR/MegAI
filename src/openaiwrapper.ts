@@ -12,6 +12,8 @@ import mathTool from "./tools/math.tool";
 import stableHordeTool from "./tools/stablehorde.tool";
 import { Session } from "./session.interface";
 import googleImagesTool from "./tools/google-images.tool";
+import sayTool from "./tools/say.tool";
+import weatherTool from "./tools/weather.tool";
 
 const personality: ChatCompletionRequestMessage = {
     role: 'system',
@@ -35,6 +37,8 @@ export class OpenAiWrapper {
         wikipediaTool,
         mathTool,
         stableHordeTool,
+        sayTool,
+        weatherTool,
     ];
     private history = new HistoryManager();
 
