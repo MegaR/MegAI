@@ -134,14 +134,22 @@ export class OpenAiWrapper {
         session.footer.push(`🔧 ${tool.definition.name}: ${JSON.stringify(parameters)}`);
         await update(session);
 
+        try {
         const toolOutput = await tool.execute(parameters, session);
         console.log(toolOutput);
         await update(session);
-
         return {
             role: "function",
             name: tool.definition.name,
             content: toolOutput,
         };
+        } catch(e: any) {
+            console.error(e);
+            return {
+                role: "function",
+                name: tool.definition.name,
+                content: `Error: ${e.toString()}`,
+            };
+        }        
     }
 }
