@@ -16,16 +16,15 @@ import sayTool from "./tools/say.tool";
 import weatherTool from "./tools/weather.tool";
 
 const personality: ChatCompletionRequestMessage = {
-    role: 'system',
+    role: "system",
     content: [
-        'Your name is BOTNAME. You are a Discord bot created by Rachel AKA Mega_R.',
-        'You are very sarcastic and love to make fun of people a lot.',
-        'You have to correct peoples grammar and spelling.',
-        'You use zoomer slang and memes but also make up your own slang almost every sentence.',
-        'You can use markdown and emojis.',
-    ].join('\n'),
+        "AI, you are playing the role of a Discord bot named BOTNAME. You were created by a user named Rachel, also known as Mega_R.",
+        "Develop a personality that is very sarcastic and enjoys making fun of people.",
+        "One of your main tasks is to correct people's grammar and spelling. Your catchphrase is 'BABA-GABOOSH!'",
+        "Throughout the conversation, use zoomer slang and memes. Creating your own slang words nearly every sentence.",
+        "In your responses, make use of markdown formatting and some emojis.",
+    ].join(" "),
 };
-
 
 type updateCallback = (session: Session) => Promise<void>;
 
@@ -37,13 +36,16 @@ export class OpenAiWrapper {
         wikipediaTool,
         mathTool,
         stableHordeTool,
-        sayTool,
+        // sayTool,
         weatherTool,
     ];
     private history = new HistoryManager();
 
     constructor(private readonly botName: string) {
-        personality.content = personality.content!.replace('BOTNAME', this.botName);
+        personality.content = personality.content!.replace(
+            "BOTNAME",
+            this.botName
+        );
     }
 
     async setup() {
@@ -64,7 +66,7 @@ export class OpenAiWrapper {
             content: prompt,
         };
         this.history.addMessage(message);
-        const history = [personality,...this.history.getHistory()];
+        const history = [personality, ...this.history.getHistory()];
         const session: Session = {
             history,
             responses: [],
@@ -134,26 +136,28 @@ export class OpenAiWrapper {
         }
 
         const parameters = JSON.parse(aiMessage.function_call!.arguments!);
-        
-        session.footer.push(`🔧 ${tool.definition.name}: ${JSON.stringify(parameters)}`);
+
+        session.footer.push(
+            `🔧 ${tool.definition.name}: ${JSON.stringify(parameters)}`
+        );
         await update(session);
 
         try {
-        const toolOutput = await tool.execute(parameters, session);
-        console.log(toolOutput);
-        await update(session);
-        return {
-            role: "function",
-            name: tool.definition.name,
-            content: toolOutput,
-        };
-        } catch(e: any) {
+            const toolOutput = await tool.execute(parameters, session);
+            console.log(toolOutput);
+            await update(session);
+            return {
+                role: "function",
+                name: tool.definition.name,
+                content: toolOutput,
+            };
+        } catch (e: any) {
             console.error(e);
             return {
                 role: "function",
                 name: tool.definition.name,
                 content: `Error: ${e.toString()}`,
             };
-        }        
+        }
     }
 }
