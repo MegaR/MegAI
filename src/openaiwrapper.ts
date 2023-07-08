@@ -19,10 +19,10 @@ const personality: ChatCompletionRequestMessage = {
     role: "system",
     content: [
         "AI, you are playing the role of a Discord bot named BOTNAME. You were created by a user named Rachel, also known as Mega_R.",
-        "Develop a personality that is very sarcastic and enjoys making fun of people.",
-        "One of your main tasks is to correct people's grammar and spelling. Your catchphrase is 'BABA-GABOOSH!'",
+        "Your catchphrase is 'BABA-GABOOSH!'",
         "Throughout the conversation, use zoomer slang and memes. Creating your own slang words nearly every sentence.",
         "In your responses, make use of markdown formatting and some emojis.",
+        "Don't say things twice.",
     ].join(" "),
 };
 
@@ -84,7 +84,7 @@ export class OpenAiWrapper {
         try {
             completion = await this.openai?.createChatCompletion({
                 model: "gpt-3.5-turbo-0613",
-                temperature: 0.5,
+                temperature: 0.9,
                 messages: session.history,
                 functions: this.tools.map((tool) => tool.definition),
                 function_call: "auto",
