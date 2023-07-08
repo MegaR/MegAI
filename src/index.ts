@@ -1,15 +1,19 @@
 import "dotenv/config";
 import {
+    ApplicationCommandType,
     AttachmentBuilder,
     Client,
     EmbedBuilder,
     GatewayIntentBits,
     Message,
+    MessageContextMenuCommandInteraction,
+    RESTPostAPIChatInputApplicationCommandsJSONBody,
     Routes,
+    SlashCommandBuilder,
 } from "discord.js";
 import { OpenAiWrapper } from "./openaiwrapper";
 import { Session } from "./session.interface";
-import {DateTime} from 'luxon';
+import { DateTime } from "luxon";
 
 async function start() {
     const client = await setupDiscord();
@@ -24,10 +28,34 @@ async function start() {
             await handleMention(message, ai);
         }
     });
+
+    client.on("interactionCreate", async (interaction) => {
+        if (!interaction.isCommand()) return;
+        if (interaction.commandName === "reply") {
+            if (
+                (interaction as MessageContextMenuCommandInteraction)
+                    .targetMessage.author === client.user
+            ) {
+                await interaction.reply({
+                    content: "I can't reply to myself!",
+                    ephemeral: true,
+                });
+                return;
+            }
+            await interaction.reply({ content: "Replying!", ephemeral: true });
+            await handleMention(
+                (interaction as MessageContextMenuCommandInteraction)
+                    .targetMessage,
+                ai
+            );
+        }
+    });
 }
 
 function formatPrompt(user: string, message: Message<boolean>) {
-    const timestamp = DateTime.fromJSDate(message.createdAt).toFormat("yyyy-MM-dd HH:mm:ss");
+    const timestamp = DateTime.fromJSDate(message.createdAt).toFormat(
+        "yyyy-MM-dd HH:mm:ss"
+    );
     return `[${timestamp}]${user}: ${message.cleanContent}`;
 }
 
@@ -57,8 +85,8 @@ async function handleMention(message: Message<boolean>, ai: OpenAiWrapper) {
 async function updateMessage(message: Message<boolean>, session: Session) {
     let embed = new EmbedBuilder();
     let files: AttachmentBuilder[] = [];
-    
-    if(session.responses.length > 0) {
+
+    if (session.responses.length > 0) {
         embed = embed.setDescription(session.responses.join("\n"));
     }
 
@@ -66,9 +94,11 @@ async function updateMessage(message: Message<boolean>, session: Session) {
         embed = embed.setFooter({ text: session.footer.join("\n") });
     }
 
-    if(session.attachments.length > 0) {
-        for(let i = 0; i < session.attachments.length; i++) {
-            const file = new AttachmentBuilder(session.attachments[i], {name: `image${i}.png`});
+    if (session.attachments.length > 0) {
+        for (let i = 0; i < session.attachments.length; i++) {
+            const file = new AttachmentBuilder(session.attachments[i], {
+                name: `image${i}.png`,
+            });
             embed = embed.setImage(`attachment://image${i}.png`);
             files.push(file);
         }
@@ -96,9 +126,15 @@ async function setupDiscord() {
     });
 
     await client.login(process.env.DISCORD_TOKEN);
+
+    const replyCommand = {
+        name: "reply",
+        type: ApplicationCommandType.Message,
+    };
+    replyCommand.type = ApplicationCommandType.Message;
     await client.rest.put(
         Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!),
-        { body: [] }
+        { body: [replyCommand] }
     );
     return client;
 }
