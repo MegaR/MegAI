@@ -87,6 +87,8 @@ export class OpenAiWrapper {
                 messages: session.history,
                 functions: this.tools.map((tool) => tool.definition),
                 function_call: "auto",
+                frequency_penalty: 2,
+                presence_penalty: 2,
             });
         } catch (e: any) {
             if (e?.response?.data?.error?.type === "server_error") {

@@ -37,7 +37,7 @@ async function handleMention(message: Message<boolean>, ai: OpenAiWrapper) {
     });
 
     try {
-        const user = message.member?.displayName || message.author.username;
+        const user = message.author.username;
         const prompt = formatPrompt(user, message);
         console.log(prompt);
 
