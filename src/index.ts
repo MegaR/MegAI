@@ -9,6 +9,7 @@ import {
 } from "discord.js";
 import { OpenAiWrapper } from "./openaiwrapper";
 import { Session } from "./session.interface";
+import {DateTime} from 'luxon';
 
 async function start() {
     const client = await setupDiscord();
@@ -26,7 +27,7 @@ async function start() {
 }
 
 function formatPrompt(user: string, message: Message<boolean>) {
-    const timestamp = new Date().toISOString();
+    const timestamp = DateTime.fromJSDate(message.createdAt).toFormat("yyyy-MM-dd HH:mm:ss");
     return `[${timestamp}]${user}: ${message.cleanContent}`;
 }
 
