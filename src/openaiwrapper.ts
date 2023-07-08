@@ -12,7 +12,6 @@ import mathTool from "./tools/math.tool";
 import stableHordeTool from "./tools/stablehorde.tool";
 import { Session } from "./session.interface";
 import googleImagesTool from "./tools/google-images.tool";
-import sayTool from "./tools/say.tool";
 import weatherTool from "./tools/weather.tool";
 
 const personality: ChatCompletionRequestMessage = {
@@ -100,6 +99,9 @@ export class OpenAiWrapper {
         if (!completion) throw new Error("No completion");
         const aiMessage = completion.data.choices[0].message;
         if (!aiMessage) throw new Error("No ai message");
+        
+        session.history.push(aiMessage);
+        this.history.addMessage(aiMessage);
 
         if (aiMessage.function_call) {
             const toolResponse = await this.handleFunctionCall(
@@ -107,14 +109,14 @@ export class OpenAiWrapper {
                 session,
                 update
             );
-            session.history.push(aiMessage);
+            this.history.addMessage(toolResponse);
             session.history.push(toolResponse);
             return await this.chatCompletion(session, update);
         }
 
-        this.history.addMessage(aiMessage);
         console.log(`[${this.botName}] ${aiMessage.content}`);
         session.responses.push(aiMessage.content!);
+
         update(session);
     }
 
