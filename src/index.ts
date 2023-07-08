@@ -16,11 +16,11 @@ async function start() {
     const ai = new OpenAiWrapper(client.user?.username!);
     await ai.setup();
     client.on("messageCreate", async (message) => {
-        if (message.author.bot) return;
+        // if (message.author.bot) return;
         if (message.content === "!ping") {
             await message.reply("Pong!");
         }
-        if (message.mentions.has(client.user!)) {
+        if (message.mentions.members?.has(client.user!.id)) {
             await handleMention(message, ai);
         }
     });
