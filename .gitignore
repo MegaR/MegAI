@@ -24,3 +24,5 @@ tsconfig.tsbuildinfo
 # Env
 .env
 build
+
+postgres-data/*

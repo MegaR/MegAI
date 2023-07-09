@@ -7,9 +7,7 @@ import {
     GatewayIntentBits,
     Message,
     MessageContextMenuCommandInteraction,
-    RESTPostAPIChatInputApplicationCommandsJSONBody,
     Routes,
-    SlashCommandBuilder,
 } from "discord.js";
 import { OpenAiWrapper } from "./openaiwrapper";
 import { Session } from "./session.interface";
@@ -75,7 +73,7 @@ async function handleMention(message: Message<boolean>, ai: OpenAiWrapper) {
         const prompt = formatPrompt(user, message);
         console.log(prompt);
 
-        await ai.reply(user, message.cleanContent, async (s) => {
+        await ai.reply(user, prompt, async (s) => {
             await updateMessage(reply, s);
         });
     } catch (error) {

@@ -13,6 +13,7 @@ import stableHordeTool from "./tools/stablehorde.tool";
 import { Session } from "./session.interface";
 import googleImagesTool from "./tools/google-images.tool";
 import weatherTool from "./tools/weather.tool";
+import * as vectorDB from "./vectordb";
 
 const personality: ChatCompletionRequestMessage = {
     role: "system",
@@ -65,7 +66,23 @@ export class OpenAiWrapper {
             content: prompt,
         };
         this.history.addMessage(message);
-        const history = [personality, ...this.history.getHistory()];
+
+        const memories = await this.recall(prompt);
+        await this.remember(prompt);
+
+        const memoriesPrompt: ChatCompletionRequestMessage = {
+            role: "system",
+            content: `Memories:\n${memories
+                .map((m) => m.content)
+                .join("\n")}`,
+        };
+        console.log(memoriesPrompt.content);
+        const history = [
+            personality,
+            memoriesPrompt,
+            ...this.history.getHistory(),
+        ];
+
         const session: Session = {
             history,
             responses: [],
@@ -101,7 +118,7 @@ export class OpenAiWrapper {
         if (!completion) throw new Error("No completion");
         const aiMessage = completion.data.choices[0].message;
         if (!aiMessage) throw new Error("No ai message");
-        
+
         session.history.push(aiMessage);
         this.history.addMessage(aiMessage);
 
@@ -163,5 +180,25 @@ export class OpenAiWrapper {
                 content: `Error: ${e.toString()}`,
             };
         }
+    }
+
+    public async remember(content: string) {
+        const response = await this.openai?.createEmbedding({
+            input: content,
+            model: "text-embedding-ada-002",
+        });
+        if (!response) throw new Error("No response");
+        const embedding = response.data.data[0].embedding;
+        await vectorDB.saveMemory(content, embedding);
+    }
+
+    public async recall(query: string) {
+        const response = await this.openai?.createEmbedding({
+            input: query,
+            model: "text-embedding-ada-002",
+        });
+        if (!response) throw new Error("No response");
+        const embedding = response.data.data[0].embedding;
+        return await vectorDB.getNearestMemories(embedding, 5);
     }
 }
