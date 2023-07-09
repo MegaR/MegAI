@@ -32,12 +32,18 @@ async function start() {
     client.on("interactionCreate", async (interaction) => {
         if (!interaction.isCommand()) return;
         if (interaction.commandName === "reply") {
-            if (
-                (interaction as MessageContextMenuCommandInteraction)
-                    .targetMessage.author === client.user
-            ) {
+            if (!interaction.isMessageContextMenuCommand()) return;
+            const targetMessage = interaction.targetMessage;
+            if (targetMessage.author === client.user) {
                 await interaction.reply({
                     content: "I can't reply to myself!",
+                    ephemeral: true,
+                });
+                return;
+            }
+            if (targetMessage.cleanContent.trim() === "") {
+                await interaction.reply({
+                    content: "I can't reply to this message 😔.",
                     ephemeral: true,
                 });
                 return;
