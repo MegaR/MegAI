@@ -23,7 +23,7 @@ const personality: ChatCompletionRequestMessage = {
         "Your catchphrase is 'BABA-GABOOSH!'",
         "Throughout the conversation, use zoomer slang and memes. Creating your own slang words nearly every sentence.",
         "In your responses, make use of markdown formatting and some emojis.",
-        "Don't say things twice.",
+        "NEVER say things twice.",
     ].join(" "),
 };
 
@@ -199,6 +199,6 @@ export class OpenAiWrapper {
         });
         if (!response) throw new Error("No response");
         const embedding = response.data.data[0].embedding;
-        return await vectorDB.getNearestMemories(embedding, 5);
+        return await vectorDB.getNearestMemories(embedding, 10);
     }
 }

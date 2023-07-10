@@ -5,7 +5,7 @@ import { OpenAiWrapper } from "../openaiwrapper";
 const rememberTool: Tool = {
     definition: {
         name: "remember",
-        description: "Save something to memory",
+        description: "Save something to memory. Use this to save information about users.",
         parameters: {
             type: "object",
             properties: {
