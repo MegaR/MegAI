@@ -9,6 +9,7 @@ import {
     MessageContextMenuCommandInteraction,
     Partials,
     Routes,
+    SlashCommandBuilder,
 } from "discord.js";
 import { OpenAiWrapper } from "./openaiwrapper";
 import { Session } from "./session.interface";
@@ -75,9 +76,18 @@ async function start() {
                 content: `remembering`,
                 ephemeral: true,
             });
-            interaction.deferReply
             await targetMessage.reply({
                 content: `${client.user?.username} will remember that.`,
+            });
+        }
+        if (interaction.commandName === "recall") {
+            if (!interaction.isChatInputCommand) return;
+            await interaction.deferReply();
+            const query = interaction.options.get("query", true);
+            const memories = await ai.recall(query.value as string);
+            await interaction.editReply({
+                content:
+                    "Memories: \n" + memories.map((m) => m.content).join("\n"),
             });
         }
     });
@@ -167,10 +177,19 @@ async function setupDiscord() {
         name: "remember",
         type: ApplicationCommandType.Message,
     };
-    replyCommand.type = ApplicationCommandType.Message;
+    const recallCommand = new SlashCommandBuilder()
+        .setName("recall")
+        .setDescription("search memory")
+        .addStringOption((option) =>
+            option
+                .setName("query")
+                .setDescription("search query")
+                .setRequired(true)
+        );
+
     await client.rest.put(
         Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!),
-        { body: [replyCommand, rememberCommand] }
+        { body: [replyCommand, rememberCommand, recallCommand] }
     );
     return client;
 }
