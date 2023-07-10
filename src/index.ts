@@ -7,6 +7,7 @@ import {
     GatewayIntentBits,
     Message,
     MessageContextMenuCommandInteraction,
+    Partials,
     Routes,
 } from "discord.js";
 import { OpenAiWrapper } from "./openaiwrapper";
@@ -19,10 +20,14 @@ async function start() {
     await ai.setup();
     client.on("messageCreate", async (message) => {
         // if (message.author.bot) return;
+        if (message.author.id === client.user?.id) return;
         if (message.content === "!ping") {
             await message.reply("Pong!");
         }
-        if (message.mentions.members?.has(client.user!.id)) {
+        if (
+            message.mentions.members?.has(client.user!.id) ||
+            message.guild === null
+        ) {
             await handleMention(message, ai);
         }
     });
@@ -60,7 +65,7 @@ function formatPrompt(user: string, message: Message<boolean>) {
     const timestamp = DateTime.fromJSDate(message.createdAt).toFormat(
         "yyyy-MM-dd HH:mm:ss"
     );
-    return `[${timestamp}]${user}: ${message.cleanContent}`;
+    return `[${timestamp}] ${user}: ${message.cleanContent}`;
 }
 
 async function handleMention(message: Message<boolean>, ai: OpenAiWrapper) {
@@ -123,6 +128,7 @@ async function setupDiscord() {
             GatewayIntentBits.DirectMessages,
             GatewayIntentBits.MessageContent,
         ],
+        partials: [Partials.Channel, Partials.Message],
     });
 
     client.on("ready", () => {
