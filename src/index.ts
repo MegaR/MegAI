@@ -58,6 +58,28 @@ async function start() {
                 ai
             );
         }
+        if (interaction.commandName === "remember") {
+            if (!interaction.isMessageContextMenuCommand()) return;
+            const targetMessage = interaction.targetMessage;
+            if (targetMessage.cleanContent.trim() === "") {
+                await interaction.reply({
+                    content: "I can't remember this message 😔.",
+                    ephemeral: true,
+                });
+                return;
+            }
+            ai.remember(
+                formatPrompt(targetMessage.author.username, targetMessage)
+            );
+            await interaction.reply({
+                content: `remembering`,
+                ephemeral: true,
+            });
+            interaction.deferReply
+            await targetMessage.reply({
+                content: `${client.user?.username} will remember that.`,
+            });
+        }
     });
 }
 
@@ -141,10 +163,14 @@ async function setupDiscord() {
         name: "reply",
         type: ApplicationCommandType.Message,
     };
+    const rememberCommand = {
+        name: "remember",
+        type: ApplicationCommandType.Message,
+    };
     replyCommand.type = ApplicationCommandType.Message;
     await client.rest.put(
         Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!),
-        { body: [replyCommand] }
+        { body: [replyCommand, rememberCommand] }
     );
     return client;
 }
