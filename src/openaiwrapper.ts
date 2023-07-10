@@ -14,6 +14,7 @@ import { Session } from "./session.interface";
 import googleImagesTool from "./tools/google-images.tool";
 import weatherTool from "./tools/weather.tool";
 import * as vectorDB from "./vectordb";
+import rememberTool from "./tools/remember.tool";
 
 const personality: ChatCompletionRequestMessage = {
     role: "system",
@@ -38,6 +39,7 @@ export class OpenAiWrapper {
         stableHordeTool,
         // sayTool,
         weatherTool,
+        rememberTool,
     ];
     private history = new HistoryManager();
 
@@ -72,9 +74,7 @@ export class OpenAiWrapper {
 
         const memoriesPrompt: ChatCompletionRequestMessage = {
             role: "system",
-            content: `Memories:\n${memories
-                .map((m) => m.content)
-                .join("\n")}`,
+            content: `Memories:\n${memories.map((m) => m.content).join("\n")}`,
         };
         console.log(memoriesPrompt.content);
         const history = [
@@ -100,7 +100,7 @@ export class OpenAiWrapper {
         try {
             completion = await this.openai?.createChatCompletion({
                 model: "gpt-3.5-turbo-0613",
-                temperature: 0.9,
+                temperature: 0.5,
                 messages: session.history,
                 functions: this.tools.map((tool) => tool.definition),
                 function_call: "auto",
@@ -164,7 +164,7 @@ export class OpenAiWrapper {
         await update(session);
 
         try {
-            const toolOutput = await tool.execute(parameters, session);
+            const toolOutput = await tool.execute(parameters, session, this);
             console.log(toolOutput);
             await update(session);
             return {
