@@ -15,6 +15,7 @@ import googleImagesTool from "./tools/google-images.tool";
 import weatherTool from "./tools/weather.tool";
 import * as vectorDB from "./vectordb";
 import rememberTool from "./tools/remember.tool";
+import searchMemoriesTool from "./tools/search-memories.tool";
 
 const personality: ChatCompletionRequestMessage = {
     role: "system",
@@ -40,6 +41,7 @@ export class OpenAiWrapper {
         // sayTool,
         weatherTool,
         rememberTool,
+        searchMemoriesTool,
     ];
     private history = new HistoryManager();
 
@@ -76,7 +78,6 @@ export class OpenAiWrapper {
             role: "system",
             content: `Memories:\n${memories.map((m) => m.content).join("\n")}`,
         };
-        console.log(memoriesPrompt.content);
         const history = [
             personality,
             memoriesPrompt,

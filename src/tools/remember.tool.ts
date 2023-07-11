@@ -4,14 +4,14 @@ import { OpenAiWrapper } from "../openaiwrapper";
 
 const rememberTool: Tool = {
     definition: {
-        name: "remember",
+        name: "save_memory",
         description: "Save something to memory. Use this to save information about users.",
         parameters: {
             type: "object",
             properties: {
                 memory: {
                     type: "string",
-                    description: "Text you want to remember in third person",
+                    description: "Text you want to store written in third person",
                 },
             },
             required: ["memory"],
