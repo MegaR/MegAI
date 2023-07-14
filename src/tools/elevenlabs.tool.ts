@@ -4,14 +4,14 @@ import Tool from "../tool.interface";
 
 const elevenLabsTool: Tool = {
     definition: {
-        name: "speech_synthesis",
+        name: "text_to_speech",
         description: "Convert text to speech",
         parameters: {
             type: "object",
             properties: {
                 text: {
                     type: "string",
-                    description: "text to convert to speech",
+                    description: "text to convert",
                 },
             },
             required: ["text"],
