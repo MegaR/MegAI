@@ -36,7 +36,7 @@ const googleImagesTool: Tool = {
 
         for(const result of resultsFormatted.filter(r => r.imageLink)) {
             const image = await downloadImage(result.imageLink!);
-            session.attachments.push(image);
+            session.attachments.push({file: image, name: 'image.png'});
         }
 
         return JSON.stringify(resultsFormatted, null, 2);

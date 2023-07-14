@@ -59,7 +59,7 @@ const stableHordeTool: Tool = {
         console.log(`StableHorde image id: ${id}`);
         const url = await waitForResult(id);
         const stream = await downloadImage(url);
-        session.attachments.push(stream);
+        session.attachments.push({file: stream, name: 'image.png'});
         return url;
     },
 };

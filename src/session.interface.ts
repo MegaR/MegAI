@@ -5,6 +5,6 @@ import { Stream } from "stream";
 export interface Session {
     responses: string[];
     history: ChatCompletionRequestMessage[];
-    attachments: BufferResolvable[] | Stream[];
+    attachments: { name: string; file: BufferResolvable | Stream }[];
     footer: string[];
 }

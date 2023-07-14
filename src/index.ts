@@ -14,6 +14,7 @@ import {
 import { OpenAiWrapper } from "./openaiwrapper";
 import { Session } from "./session.interface";
 import { DateTime } from "luxon";
+import elevenLabsTool from "./tools/elevenlabs.tool";
 
 async function start() {
     const client = await setupDiscord();
@@ -136,11 +137,10 @@ async function updateMessage(message: Message<boolean>, session: Session) {
     }
 
     if (session.attachments.length > 0) {
-        for (let i = 0; i < session.attachments.length; i++) {
-            const file = new AttachmentBuilder(session.attachments[i], {
-                name: `image${i}.png`,
+        for(const attachment of session.attachments) {
+            const file = new AttachmentBuilder(attachment.file, {
+                name: attachment.name,
             });
-            embed = embed.setImage(`attachment://image${i}.png`);
             files.push(file);
         }
     }
