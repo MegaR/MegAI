@@ -102,7 +102,7 @@ export class OpenAiWrapper {
         let completion;
         try {
             completion = await this.openai?.createChatCompletion({
-                model: "gpt-4-0613",
+                model: process.env.GPT_MODEL!,
                 temperature: 0.5,
                 messages: session.history,
                 functions: this.tools.map((tool) => tool.definition),
