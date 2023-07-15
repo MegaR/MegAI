@@ -19,7 +19,7 @@ const elevenLabsTool: Tool = {
     },
     execute: async (parameters: any, session: Session) => {
         const buffer = await textToSpeech(parameters.text);
-        session.attachments.push({file: buffer, name: 'audio.mp4'});
+        session.attachments.push({file: buffer, name: 'audio.wav'});
         return 'Audio attached to message.';
     },
 };
