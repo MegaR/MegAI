@@ -16,7 +16,6 @@ import weatherTool from "./tools/weather.tool";
 import * as vectorDB from "./vectordb";
 import rememberTool from "./tools/remember.tool";
 import searchMemoriesTool from "./tools/search-memories.tool";
-import elevenLabsTool from "./tools/elevenlabs.tool";
 
 const personality: ChatCompletionRequestMessage = {
     role: "system",
