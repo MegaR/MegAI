@@ -43,7 +43,7 @@ export class OpenAiWrapper {
         weatherTool,
         rememberTool,
         searchMemoriesTool,
-        elevenLabsTool,
+        // elevenLabsTool,
     ];
     private history = new HistoryManager();
 

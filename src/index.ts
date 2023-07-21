@@ -111,9 +111,20 @@ async function handleMention(message: Message<boolean>, ai: OpenAiWrapper) {
         const prompt = formatPrompt(user, message);
         console.log(prompt);
 
+        let currentSession: Session | undefined;
         await ai.reply(user, prompt, async (s) => {
+            currentSession = s;
             await updateMessage(reply, s);
         });
+
+        if (currentSession) {
+            await elevenLabsTool.execute(
+                { text: currentSession.responses.join("\n") },
+                currentSession,
+                ai
+            );
+            await updateMessage(reply, currentSession);
+        }
     } catch (error) {
         if ((error as any).response) {
             console.error("network error: ", (error as any)?.response?.data);
@@ -137,7 +148,7 @@ async function updateMessage(message: Message<boolean>, session: Session) {
     }
 
     if (session.attachments.length > 0) {
-        for(const attachment of session.attachments) {
+        for (const attachment of session.attachments) {
             const file = new AttachmentBuilder(attachment.file, {
                 name: attachment.name,
             });
