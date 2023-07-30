@@ -14,7 +14,7 @@ import {
 import { OpenAiWrapper } from "./openaiwrapper";
 import { Session } from "./session.interface";
 import { DateTime } from "luxon";
-import elevenLabsTool from "./tools/elevenlabs.tool";
+import { tts } from "./tts";
 
 async function start() {
     const client = await setupDiscord();
@@ -118,11 +118,8 @@ async function handleMention(message: Message<boolean>, ai: OpenAiWrapper) {
         });
 
         if (currentSession) {
-            await elevenLabsTool.execute(
-                { text: currentSession.responses.join("\n") },
-                currentSession,
-                ai
-            );
+            const audio = await tts(currentSession.responses.join("\n"));
+            currentSession.attachments.push({file: audio, name: "tts.mp3"});
             await updateMessage(reply, currentSession);
         }
     } catch (error) {
