@@ -1,6 +1,6 @@
 import { Session } from "../session.interface";
 import Tool from "../tool.interface";
-import { OpenAiWrapper } from "../openaiwrapper";
+import { MegAI } from "../megai";
 
 const searchMemoriesTool: Tool = {
     definition: {
@@ -17,7 +17,7 @@ const searchMemoriesTool: Tool = {
             required: ["query"],
         },
     },
-    execute: async (parameters: any, _: Session, ai: OpenAiWrapper) => {
+    execute: async (parameters: any, _: Session, ai: MegAI) => {
         const memories = await ai.recall(parameters.query);
         return JSON.stringify(memories);
     },
