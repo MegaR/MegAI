@@ -22,6 +22,7 @@ const log = getLogger("main");
 
 async function start() {
     const client = await setupDiscord();
+    await setupCommands();
     const megAI = new MegAI(client.user?.username!);
     client.on("messageCreate", async (message) => {
         // if (message.author.bot) return;
@@ -68,7 +69,6 @@ async function start() {
             log.info(`Logged in as ${client.user?.tag}!`);
         });
         await client.login(process.env.DISCORD_TOKEN);
-        await setupCommands();
         return client;
     }
 
@@ -116,7 +116,7 @@ async function start() {
             embed = embed.setFooter({ text: session.footer.join("\n") });
         }
         if (session.attachments.length > 0) {
-            for (const attachment of session.attachments) {
+            for (const attachment of session.attachments.slice(-10)) {
                 const file = new AttachmentBuilder(attachment.file, {
                     name: attachment.name,
                 });
