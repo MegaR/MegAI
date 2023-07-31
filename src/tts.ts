@@ -1,4 +1,5 @@
 import axios from "axios";
+import MarkdownIt from "markdown-it";
 
 export async function tts(text: string) {
     const url = `${process.env.LOCALAI}/tts`;
@@ -6,7 +7,7 @@ export async function tts(text: string) {
     const response = await axios.post(
         url,
         JSON.stringify({
-            input: text,
+            input: convertMarkdownToText(text),
             model: model,
         }),
         {
@@ -17,4 +18,10 @@ export async function tts(text: string) {
         }
     );
     return response.data;
+}
+
+function convertMarkdownToText(markdown: string): string {
+    const md = new MarkdownIt();
+    const result = md.render(markdown);
+    return result.replace(/<\/?[^>]+(>|$)/g, "");
 }

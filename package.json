@@ -31,10 +31,12 @@
   "dependencies": {
     "@googleapis/customsearch": "^1.0.0",
     "@prisma/client": "^4.16.2",
+    "@types/markdown-it": "^12.2.3",
     "axios": "^1.4.0",
     "discord.js": "^14.11.0",
     "dotenv": "^16.3.1",
     "luxon": "^3.3.0",
+    "markdown-it": "^13.0.1",
     "mathjs": "^11.8.2",
     "openai": "^3.3.0",
     "wikipedia": "^2.1.0"
