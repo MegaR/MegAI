@@ -39,6 +39,7 @@
     "markdown-it": "^13.0.1",
     "mathjs": "^11.8.2",
     "openai": "^3.3.0",
+    "tslog": "^4.8.2",
     "wikipedia": "^2.1.0"
   }
 }

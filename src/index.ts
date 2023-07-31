@@ -15,6 +15,10 @@ import { OpenAiWrapper } from "./openaiwrapper";
 import { Session } from "./session.interface";
 import { DateTime } from "luxon";
 import { tts } from "./tts";
+import { getLogger } from "./logger";
+
+
+const log = getLogger('main');
 
 async function start() {
     const client = await setupDiscord();
@@ -109,7 +113,7 @@ async function handleMention(message: Message<boolean>, ai: OpenAiWrapper) {
     try {
         const user = message.author.username;
         const prompt = formatPrompt(user, message);
-        console.log(prompt);
+        log.debug(prompt);
 
         let currentSession: Session | undefined;
         await ai.reply(user, prompt, async (s) => {
@@ -124,9 +128,9 @@ async function handleMention(message: Message<boolean>, ai: OpenAiWrapper) {
         }
     } catch (error) {
         if ((error as any).response) {
-            console.error("network error: ", (error as any)?.response?.data);
+            log.error("network error: ", (error as any)?.response?.data);
         } else {
-            console.error(error);
+            log.error(error);
         }
         reply.edit("❌ Something went wrong. 😢");
     }
@@ -160,7 +164,7 @@ async function updateMessage(message: Message<boolean>, session: Session) {
 }
 
 async function setupDiscord() {
-    console.log("setting up Discord");
+    log.info("setting up Discord");
     const client = new Client({
         intents: [
             GatewayIntentBits.Guilds,
@@ -172,7 +176,7 @@ async function setupDiscord() {
     });
 
     client.on("ready", () => {
-        console.log(`Logged in as ${client.user?.tag}!`);
+        log.info(`Logged in as ${client.user?.tag}!`);
     });
 
     await client.login(process.env.DISCORD_TOKEN);

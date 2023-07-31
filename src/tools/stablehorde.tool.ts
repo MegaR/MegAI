@@ -1,7 +1,7 @@
-import { IncomingMessage } from "http";
 import Tool from "../tool.interface";
 import axios from "axios";
 import { Session } from "../session.interface";
+import { getLogger } from "../logger";
 
 interface Model {
     name: string;
@@ -10,6 +10,7 @@ interface Model {
 }
 
 const stableHordeApiKey = process.env.STABLE_HORDE;
+const log = getLogger('StableHorde');
 
 const models: Model[] = [
     // {
@@ -56,7 +57,7 @@ const stableHordeTool: Tool = {
                 models[0];
         }
         const id = await requestImage(parameters.prompt, model);
-        console.log(`StableHorde image id: ${id}`);
+        log.debug(`StableHorde image id: ${id}`);
         const url = await waitForResult(id);
         const stream = await downloadImage(url);
         session.attachments.push({file: stream, name: 'image.png'});
@@ -99,7 +100,7 @@ async function waitForResult(id: string): Promise<string> {
         return request.data.generations[0].img;
     }
 
-    console.log(
+    log.debug(
         `image not ready. Waiting for ${request.headers["retry-after"]} seconds`
     );
     await sleep(request.headers["retry-after"] * 1000);

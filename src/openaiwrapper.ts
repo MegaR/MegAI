@@ -16,6 +16,7 @@ import weatherTool from "./tools/weather.tool";
 import * as vectorDB from "./vectordb";
 import rememberTool from "./tools/remember.tool";
 import searchMemoriesTool from "./tools/search-memories.tool";
+import { getLogger } from "./logger";
 
 const personality: ChatCompletionRequestMessage = {
     role: "system",
@@ -31,8 +32,8 @@ const personality: ChatCompletionRequestMessage = {
 type updateCallback = (session: Session) => Promise<void>;
 
 export class OpenAiWrapper {
-    private openai?: OpenAIApi;
-    private tools: Tool[] = [
+    private readonly log = getLogger('OpenAiWrapper');
+    private readonly tools: Tool[] = [
         googleTool,
         googleImagesTool,
         wikipediaTool,
@@ -44,7 +45,8 @@ export class OpenAiWrapper {
         searchMemoriesTool,
         // elevenLabsTool,
     ];
-    private history = new HistoryManager();
+    private readonly history = new HistoryManager();
+    private openai?: OpenAIApi;
 
     constructor(private readonly botName: string) {
         personality.content = personality.content!.replace(
@@ -111,7 +113,7 @@ export class OpenAiWrapper {
             });
         } catch (e: any) {
             if (e?.response?.data?.error?.type === "server_error") {
-                console.log("Server error. Retrying...");
+                this.log.warn("Server error. Retrying...");
                 return await this.chatCompletion(session, update);
             }
             throw e;
@@ -135,7 +137,7 @@ export class OpenAiWrapper {
             return await this.chatCompletion(session, update);
         }
 
-        console.log(`[${this.botName}] ${aiMessage.content}`);
+        this.log.debug(`[${this.botName}] ${aiMessage.content}`);
         session.responses.push(aiMessage.content!);
 
         update(session);
@@ -167,7 +169,7 @@ export class OpenAiWrapper {
 
         try {
             const toolOutput = await tool.execute(parameters, session, this);
-            console.log(toolOutput);
+            this.log.debug(toolOutput);
             await update(session);
             return {
                 role: "function",
