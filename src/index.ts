@@ -21,6 +21,7 @@ import { DateTime } from "luxon";
 import { tts } from "./tts";
 import { getLogger } from "./logger";
 import { startAdventure, AdventureResult, adventureReaction } from "./adventure";
+import { pollinations } from "./tools/pollinations.tool";
 
 const log = getLogger("main");
 const adventureEmojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣"];
@@ -307,7 +308,11 @@ async function start() {
             const audio = await tts(content);
             let attachments: AttachmentBuilder[] = [];
             attachments.push(new AttachmentBuilder(audio, {name: "tts.mp3" }));
-            message.edit({embeds: [embed], files: attachments});
+            await message.edit({embeds: [embed], files: attachments});
+
+            const image = await pollinations('test');
+            attachments.push(new AttachmentBuilder(image, {name: 'image.png'}));
+            await message.edit({embeds: [embed], files: attachments});
         } catch(e) {
             log.error(e);
         }
