@@ -167,12 +167,47 @@ async function handleAdventureResult(
         attachments.push(new AttachmentBuilder(audio, { name: "tts.mp3" }));
         await message.edit({ embeds: [embed], files: attachments });
 
-        const image = await pollinations('test');
+        const imagePrompt = await generateSceneDescription(result.message);
+        const image = await pollinations(imagePrompt);
         attachments.push(new AttachmentBuilder(image, { name: 'image.png' }));
         await message.edit({ embeds: [embed], files: attachments });
     } catch (e) {
         log.error(e);
     }
+}
+
+async function generateSceneDescription(story: string) {
+    const functionDef = {
+        name: "render_image",
+        description: "render an image based op the prompt",
+        parameters: {
+            type: "object",
+            properties: {
+                prompt: {
+                    type: "string",
+                    description:
+                        "descriptive sentence about the scene. Use keywords seperated by commas.",
+                },
+            },
+            required: ["prompt"],
+        },
+    };
+    const completion = await ai.chatCompletion(
+        [{
+            role: "system",
+            content: `Render an image to accompany the following text: ${story}`,
+        }],
+        [functionDef],
+        {
+            name: "render_image",
+        }
+    );
+
+    if (!completion || !completion.function_call) throw new Error("No image prompt");
+
+    const parameters = JSON.parse(completion.function_call!.arguments!);
+    return parameters.prompt;
+
 }
 
 export const startAdventureCommand: Command<ChatInputCommandInteraction> = {

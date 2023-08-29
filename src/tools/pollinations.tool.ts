@@ -1,6 +1,9 @@
 import Tool from "../tool.interface";
 import axios from "axios";
 import { Session } from "../session.interface";
+import { getLogger } from "../logger";
+
+const log = getLogger('pollinationsTool');
 
 const pollinationsTool: Tool = {
     definition: {
@@ -26,6 +29,7 @@ const pollinationsTool: Tool = {
 };
 
 export async function pollinations(prompt: string): Promise<string> {
+    log.debug(`Getting image for prompt: ${prompt}`);
     const encoded = encodeURI(prompt);
     const request = await axios.get(
         `https://image.pollinations.ai/prompt/${encoded}`,
