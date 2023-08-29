@@ -1,30 +1,35 @@
 import "dotenv/config";
 import {
+    AnyThreadChannel,
     ApplicationCommandType,
     AttachmentBuilder,
     ChatInputCommandInteraction,
     Client,
     EmbedBuilder,
+    Events,
     GatewayIntentBits,
     Message,
     MessageContextMenuCommandInteraction,
     Partials,
     Routes,
     SlashCommandBuilder,
+    ThreadAutoArchiveDuration,
 } from "discord.js";
 import { MegAI } from "./megai";
 import { Session } from "./session.interface";
 import { DateTime } from "luxon";
 import { tts } from "./tts";
 import { getLogger } from "./logger";
+import { startAdventure, AdventureResult, adventureReaction } from "./adventure";
 
 const log = getLogger("main");
+const adventureEmojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣"];
 
 async function start() {
     const client = await setupDiscord();
     await setupCommands();
     const megAI = new MegAI(client.user?.username!);
-    client.on("messageCreate", async (message) => {
+    client.on(Events.MessageCreate, async (message) => {
         // if (message.author.bot) return;
         if (message.author.id === client.user?.id) return;
         if (message.content === "!ping") {
@@ -38,7 +43,7 @@ async function start() {
         }
     });
 
-    client.on("interactionCreate", async (interaction) => {
+    client.on(Events.InteractionCreate, async (interaction) => {
         if (!interaction.isCommand()) return;
         if (interaction.commandName === "reply") {
             if (!interaction.isMessageContextMenuCommand()) return;
@@ -52,6 +57,28 @@ async function start() {
             if (!interaction.isChatInputCommand()) return;
             handleRecallCommand(interaction);
         }
+        if (interaction.commandName === "startadventure") {
+            if (!interaction.isChatInputCommand()) return;
+            handleStartAdventureCommand(interaction);
+        }
+    });
+
+    client.on(Events.MessageReactionAdd, async (reaction, user) => {
+        if (user.bot) return;
+        if (reaction.partial) {
+            await reaction.fetch();
+        }
+        const channel = reaction.message.channel;
+        if (!channel.isThread()) return;
+        if(!reaction.emoji.name) return;
+        if (!adventureEmojis.includes(reaction.emoji.name)) return;
+        
+        const index = adventureEmojis.indexOf(reaction.emoji.name);
+        const result = await adventureReaction(channel.id, index);
+
+        if(!result) return;
+        // await channel.send({content: `Player chose: ${result?.selectedOption}`});
+        await handleAdventureResult(channel, result);
     });
 
     async function setupDiscord() {
@@ -62,10 +89,11 @@ async function start() {
                 GatewayIntentBits.GuildMessages,
                 GatewayIntentBits.DirectMessages,
                 GatewayIntentBits.MessageContent,
+                GatewayIntentBits.GuildMessageReactions,
             ],
-            partials: [Partials.Channel, Partials.Message],
+            partials: [Partials.Channel, Partials.Message, Partials.Reaction],
         });
-        client.on("ready", () => {
+        client.on(Events.ClientReady, () => {
             log.info(`Logged in as ${client.user?.tag}!`);
         });
         await client.login(process.env.DISCORD_TOKEN);
@@ -148,9 +176,31 @@ async function start() {
                     .setRequired(true)
             );
 
+        const adventureCommand = new SlashCommandBuilder()
+            .setName("startadventure")
+            .setDescription("Start a adventure session")
+            .addStringOption((option) =>
+                option
+                    .setName("theme")
+                    .setDescription("theme of the adventure")
+                    .setRequired(true)
+            );
+
+        const stopAdventureCommand = new SlashCommandBuilder()
+            .setName("stopadventure")
+            .setDescription("Stop an active adventure session");
+
         await client.rest.put(
             Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!),
-            { body: [replyCommand, rememberCommand, recallCommand] }
+            {
+                body: [
+                    replyCommand,
+                    rememberCommand,
+                    recallCommand,
+                    adventureCommand,
+                    stopAdventureCommand,
+                ],
+            }
         );
     }
 
@@ -210,6 +260,39 @@ async function start() {
         const memories = await megAI.recall(query.value as string);
         await interaction.editReply({
             content: "Memories: \n" + memories.map((m) => m.content).join("\n"),
+        });
+    }
+
+    async function handleStartAdventureCommand(
+        interaction: ChatInputCommandInteraction
+    ) {
+        const theme = interaction.options.get("theme", true);
+        const reply = await interaction.reply({
+            content: `Starting adventure with theme: ${theme.value}`,
+            fetchReply: true,
+        });
+        const thread = await reply.startThread({
+            name: `Adventure: ${theme.value}`,
+            autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
+        });
+        // await thread.join();
+
+        const result = await startAdventure(thread.id, theme.value as string);
+        await handleAdventureResult(thread, result);
+    }
+
+    async function handleAdventureResult(
+        thread: AnyThreadChannel<boolean>,
+        result: AdventureResult
+    ) {
+        const content =
+            `${result.message}\n\n` +
+            result.options.map((o, i) => `${i + 1}. ${o}`).join("\n");
+        const message = await thread.send({
+            content,
+        });
+        result.options.forEach((_, i) => {
+            message.react(adventureEmojis[i]);
         });
     }
 }
