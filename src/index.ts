@@ -1,6 +1,5 @@
 import "dotenv/config";
 import {
-    AnyThreadChannel,
     ApplicationCommandType,
     AttachmentBuilder,
     ChatInputCommandInteraction,
@@ -13,18 +12,15 @@ import {
     Partials,
     Routes,
     SlashCommandBuilder,
-    ThreadAutoArchiveDuration,
 } from "discord.js";
 import { MegAI } from "./megai";
 import { Session } from "./session.interface";
 import { DateTime } from "luxon";
 import { tts } from "./tts";
 import { getLogger } from "./logger";
-import { startAdventure, AdventureResult, adventureReaction } from "./adventure";
-import { pollinations } from "./tools/pollinations.tool";
+import { handleAdventureReactions, startAdventureCommand } from "./commands/adventure.command";
 
 const log = getLogger("main");
-const adventureEmojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣"];
 
 async function start() {
     const client = await setupDiscord();
@@ -60,26 +56,13 @@ async function start() {
         }
         if (interaction.commandName === "startadventure") {
             if (!interaction.isChatInputCommand()) return;
-            handleStartAdventureCommand(interaction);
+            startAdventureCommand.handleCommand(client, interaction);
         }
     });
 
     client.on(Events.MessageReactionAdd, async (reaction, user) => {
         if (user.bot) return;
-        if (reaction.partial) {
-            await reaction.fetch();
-        }
-        const channel = reaction.message.channel;
-        if (!channel.isThread()) return;
-        if(!reaction.emoji.name) return;
-        if (!adventureEmojis.includes(reaction.emoji.name)) return;
-        
-        const index = adventureEmojis.indexOf(reaction.emoji.name);
-        const result = await adventureReaction(channel.id, index);
-
-        if(!result) return;
-        // await channel.send({content: `Player chose: ${result?.selectedOption}`});
-        await handleAdventureResult(channel, result);
+        handleAdventureReactions(reaction);
     });
 
     async function setupDiscord() {
@@ -167,6 +150,7 @@ async function start() {
             name: "remember",
             type: ApplicationCommandType.Message,
         };
+
         const recallCommand = new SlashCommandBuilder()
             .setName("recall")
             .setDescription("search memory")
@@ -174,16 +158,6 @@ async function start() {
                 option
                     .setName("query")
                     .setDescription("search query")
-                    .setRequired(true)
-            );
-
-        const adventureCommand = new SlashCommandBuilder()
-            .setName("startadventure")
-            .setDescription("Start a adventure session")
-            .addStringOption((option) =>
-                option
-                    .setName("theme")
-                    .setDescription("theme of the adventure")
                     .setRequired(true)
             );
 
@@ -198,7 +172,7 @@ async function start() {
                     replyCommand,
                     rememberCommand,
                     recallCommand,
-                    adventureCommand,
+                    startAdventureCommand.definition,
                     stopAdventureCommand,
                 ],
             }
@@ -264,59 +238,6 @@ async function start() {
         });
     }
 
-    async function handleStartAdventureCommand(
-        interaction: ChatInputCommandInteraction
-    ) {
-        try {
-        const theme = interaction.options.get("theme", true);
-        const reply = await interaction.reply({
-            content: `Starting adventure with theme: ${theme.value}`,
-            fetchReply: true,
-        });
-        const thread = await reply.startThread({
-            name: `Adventure: ${theme.value}`,
-            autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
-        });
-        // await thread.join();
-
-        const result = await startAdventure(thread.id, theme.value as string);
-        await handleAdventureResult(thread, result);
-        } catch(e) {
-            log.error(e);
-        }
-    }
-
-    async function handleAdventureResult(
-        thread: AnyThreadChannel<boolean>,
-        result: AdventureResult
-    ) {
-        try {
-            const content =
-                `${result.message}\n\n` +
-                result.options.map((o, i) => `${i + 1}. ${o}`).join("\n");
-
-            const embed = new EmbedBuilder();
-            embed.setDescription(content);
-
-            const message = await thread.send({
-                embeds:[embed],
-            });
-            result.options.forEach((_, i) => {
-                message.react(adventureEmojis[i]);
-            });
-
-            const audio = await tts(content);
-            let attachments: AttachmentBuilder[] = [];
-            attachments.push(new AttachmentBuilder(audio, {name: "tts.mp3" }));
-            await message.edit({embeds: [embed], files: attachments});
-
-            const image = await pollinations('test');
-            attachments.push(new AttachmentBuilder(image, {name: 'image.png'}));
-            await message.edit({embeds: [embed], files: attachments});
-        } catch(e) {
-            log.error(e);
-        }
-    }
-}
+} 
 
 start();
