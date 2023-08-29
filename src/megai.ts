@@ -1,8 +1,6 @@
 import {
     ChatCompletionRequestMessage,
     ChatCompletionResponseMessage,
-    Configuration,
-    OpenAIApi,
 } from "openai";
 import Tool from "./tool.interface";
 import googleTool from "./tools/google.tool";
@@ -134,7 +132,7 @@ export class MegAI {
             (tool) => tool.definition.name === aiMessage.function_call!.name
         );
         if (!tool) {
-            console.warn(`❌ unknown tool ${aiMessage.function_call!.name}`);
+            this.log.warn(`❌ unknown tool ${aiMessage.function_call!.name}`);
             return {
                 role: "function",
                 name: aiMessage.function_call!.name,
@@ -156,7 +154,7 @@ export class MegAI {
                 content: toolOutput,
             };
         } catch (e: any) {
-            console.error(e);
+            this.log.error(e);
             return {
                 role: "function",
                 name: tool.definition.name,

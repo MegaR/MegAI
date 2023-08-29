@@ -1,6 +1,7 @@
 import { ChatCompletionRequestMessage } from "openai";
 import { ai } from "./openaiwrapper";
 import { getLogger } from "./logger";
+import Lock from "./lock";
 
 let sessions: AdventureSession[] = [];
 const log = getLogger("adventure");
@@ -9,6 +10,7 @@ interface AdventureSession {
     threadId: string;
     messages: ChatCompletionRequestMessage[];
     lastOptions: string[];
+    lock: Lock;
 }
 
 export interface AdventureResult {
@@ -17,7 +19,7 @@ export interface AdventureResult {
 }
 
 function createSystemPrompt(theme: string) {
-    return `You are a roleplaying AI. You are the dungeon master. The theme is ${theme}. Keep it interesting.`;
+    return `You are a Adventure AI. You describe the adventure and the user say what the main character does. The theme is ${theme}. Keep it interesting.`;
 }
 
 export async function startAdventure(
@@ -39,6 +41,7 @@ export async function startAdventure(
         threadId,
         messages: [systemPrompt, completion],
         lastOptions: [],
+        lock: new Lock(),
     };
     sessions.push(session);
 
@@ -57,24 +60,31 @@ export async function adventureReaction(
 ): Promise<AdventureResult | void> {
     const session = sessions.find((s) => s.threadId === threadId);
     if (!session) return;
+    if (session.lock.isLocked()) return;
+    
+    await session.lock.acquire();
+    try {
+        const option = session.lastOptions[optionIndex];
+        const message: ChatCompletionRequestMessage = {
+            role: "user",
+            content: option,
+        };
+        session.messages.push(message);
 
-    const option = session.lastOptions[optionIndex];
-    const message: ChatCompletionRequestMessage = {
-        role: "user",
-        content: option,
-    };
-    session.messages.push(message);
+        const completion = await ai.chatCompletion(session.messages);
+        if (!completion || !completion.content) throw new Error("No completion");
+        session.messages.push(completion);
 
-    const completion = await ai.chatCompletion(session.messages);
-    if (!completion || !completion.content) throw new Error("No completion");
+        const options = await getOptions(session);
+        session.lastOptions = options;
 
-    const options = await getOptions(session);
-    session.lastOptions = options;
-
-    return {
-        message: completion.content,
-        options,
-    };
+        return {
+            message: completion.content,
+            options,
+        };
+    } finally {
+        session.lock.release();
+    }
 }
 
 async function getOptions(session: AdventureSession): Promise<string[]> {

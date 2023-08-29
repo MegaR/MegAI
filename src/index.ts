@@ -266,6 +266,7 @@ async function start() {
     async function handleStartAdventureCommand(
         interaction: ChatInputCommandInteraction
     ) {
+        try {
         const theme = interaction.options.get("theme", true);
         const reply = await interaction.reply({
             content: `Starting adventure with theme: ${theme.value}`,
@@ -279,21 +280,37 @@ async function start() {
 
         const result = await startAdventure(thread.id, theme.value as string);
         await handleAdventureResult(thread, result);
+        } catch(e) {
+            log.error(e);
+        }
     }
 
     async function handleAdventureResult(
         thread: AnyThreadChannel<boolean>,
         result: AdventureResult
     ) {
-        const content =
-            `${result.message}\n\n` +
-            result.options.map((o, i) => `${i + 1}. ${o}`).join("\n");
-        const message = await thread.send({
-            content,
-        });
-        result.options.forEach((_, i) => {
-            message.react(adventureEmojis[i]);
-        });
+        try {
+            const content =
+                `${result.message}\n\n` +
+                result.options.map((o, i) => `${i + 1}. ${o}`).join("\n");
+
+            const embed = new EmbedBuilder();
+            embed.setDescription(content);
+
+            const message = await thread.send({
+                embeds:[embed],
+            });
+            result.options.forEach((_, i) => {
+                message.react(adventureEmojis[i]);
+            });
+
+            const audio = await tts(content);
+            let attachments: AttachmentBuilder[] = [];
+            attachments.push(new AttachmentBuilder(audio, {name: "tts.mp3" }));
+            message.edit({embeds: [embed], files: attachments});
+        } catch(e) {
+            log.error(e);
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 export default class Lock {
-    locked = false;
-    queue: Array<() => void> = [];
+    private locked = false;
+    private queue: Array<() => void> = [];
     acquire(): Promise<void> {
         if (!this.locked) {
             this.locked = true;
@@ -16,5 +16,8 @@ export default class Lock {
         } else {
             this.locked = false;
         }
+    }
+    isLocked(): boolean {
+        return this.locked;
     }
 }
