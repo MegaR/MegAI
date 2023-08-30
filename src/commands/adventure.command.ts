@@ -26,7 +26,7 @@ export interface AdventureResult {
 }
 
 function createSystemPrompt(theme: string) {
-    return `You are a Adventure AI. You describe the adventure and the user say what the main character does. The theme is ${theme}. Keep it interesting.`;
+    return `You are a Adventure AI. You describe the adventure and the user say what the main character does. The theme is ${theme}. Keep it interesting. Write out the dialogs.`;
 }
 
 async function startAdventure(
@@ -199,7 +199,7 @@ async function generateSceneDescription(story: string) {
                 prompt: {
                     type: "string",
                     description:
-                        "descriptive sentence about the scene. Use keywords seperated by commas.",
+                        "descriptive sentence about the scene. Use keywords seperated by commas. Use around 10 keywords.",
                 },
             },
             required: ["prompt"],
@@ -225,7 +225,7 @@ async function generateSceneDescription(story: string) {
 async function generateSummary(session: AdventureSession, newMessage: ChatCompletionRequestMessage) {
     const functionDef = {
         name: "submit_summary",
-        description: "Save a summary of the entire story so far",
+        description: "Save a summary of the entire story so far. Include characters and events ect.",
         parameters: {
             type: "object",
             properties: {
