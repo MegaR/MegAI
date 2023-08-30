@@ -14,7 +14,8 @@ const log = getLogger("adventure");
 
 interface AdventureSession {
     threadId: string;
-    messages: ChatCompletionRequestMessage[];
+    theme: string,
+    messages: {message: ChatCompletionRequestMessage, summary: ChatCompletionRequestMessage}[];
     lastOptions: string[];
     lock: Lock;
 }
@@ -45,15 +46,18 @@ async function startAdventure(
 
     const session: AdventureSession = {
         threadId,
-        messages: [systemPrompt, completion],
+        theme,
+        messages: [
+            {message: completion, summary: completion},
+        ],
         lastOptions: [],
         lock: new Lock(),
     };
-    sessions.push(session);
 
     const options = await getOptions(session);
     session.lastOptions = options;
 
+    sessions.push(session);
     return {
         message: completion.content,
         options,
@@ -65,15 +69,21 @@ export async function adventureReaction(
     optionIndex: number
 ): Promise<AdventureResult | void> {
     const option = session.lastOptions[optionIndex];
-    const message: ChatCompletionRequestMessage = {
+    const optionMessage: ChatCompletionRequestMessage = {
         role: "user",
         content: option,
     };
-    session.messages.push(message);
 
-    const completion = await ai.chatCompletion(session.messages);
+    const completion = await ai.chatCompletion([
+        {role: "system", content: createSystemPrompt(session.theme)},
+        session.messages[0].summary,
+        ...session.messages.slice(1).map(m => m.message),
+        optionMessage,
+    ]);
     if (!completion || !completion.content) throw new Error("No completion");
-    session.messages.push(completion);
+    const summary = await generateSummary(session, completion); 
+    session.messages.push({message: completion, summary});
+    session.messages = session.messages.slice(-10);
 
     const options = await getOptions(session);
     session.lastOptions = options;
@@ -104,7 +114,10 @@ async function getOptions(session: AdventureSession): Promise<string[]> {
         },
     };
     const completion = await ai.chatCompletion(
-        session.messages,
+        [
+            session.messages[0].summary,
+            ...session.messages.slice(1).map(m => m.message),
+        ],
         [functionDef],
         {
             name: "create_options",
@@ -207,7 +220,41 @@ async function generateSceneDescription(story: string) {
 
     const parameters = JSON.parse(completion.function_call!.arguments!);
     return parameters.prompt;
+}
 
+async function generateSummary(session: AdventureSession, newMessage: ChatCompletionRequestMessage) {
+    const functionDef = {
+        name: "submit_summary",
+        description: "Save a summary of the entire story so far",
+        parameters: {
+            type: "object",
+            properties: {
+                summary: {
+                    type: "string",
+                    description:
+                        "Summary of the entire story",
+                },
+            },
+            required: ["summary"],
+        },
+    };
+    const completion = await ai.chatCompletion(
+        [
+            session.messages[0].summary,
+            ...session.messages.slice(1).map(m => m.message),
+            newMessage
+        ],
+        [functionDef],
+        {
+            name: "submit_summary",
+        }
+    );
+
+    if (!completion || !completion.function_call) throw new Error("No summary");
+
+    const parameters = JSON.parse(completion.function_call!.arguments!);
+    log.debug("summary: ", parameters.summary);
+    return parameters.summary;
 }
 
 export const startAdventureCommand: Command<ChatInputCommandInteraction> = {
