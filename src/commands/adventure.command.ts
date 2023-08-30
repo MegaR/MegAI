@@ -222,7 +222,7 @@ async function generateSceneDescription(story: string) {
     return parameters.prompt;
 }
 
-async function generateSummary(session: AdventureSession, newMessage: ChatCompletionRequestMessage) {
+async function generateSummary(session: AdventureSession, newMessage: ChatCompletionRequestMessage): Promise<ChatCompletionRequestMessage> {
     const functionDef = {
         name: "submit_summary",
         description: "Save a summary of the entire story so far. Include characters and events ect.",
@@ -254,7 +254,7 @@ async function generateSummary(session: AdventureSession, newMessage: ChatComple
 
     const parameters = JSON.parse(completion.function_call!.arguments!);
     log.debug("summary: ", parameters.summary);
-    return parameters.summary;
+    return {role: "assistant", content: parameters.summary};
 }
 
 export const startAdventureCommand: Command<ChatInputCommandInteraction> = {
