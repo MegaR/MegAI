@@ -15,7 +15,7 @@ const log = getLogger("adventure");
 interface AdventureSession {
     threadId: string;
     theme: string,
-    messages: {message: ChatCompletionRequestMessage, summary: ChatCompletionRequestMessage}[];
+    messages: { message: ChatCompletionRequestMessage, summary: ChatCompletionRequestMessage }[];
     lastOptions: string[];
     lock: Lock;
 }
@@ -48,7 +48,7 @@ async function startAdventure(
         threadId,
         theme,
         messages: [
-            {message: completion, summary: completion},
+            { message: completion, summary: completion },
         ],
         lastOptions: [],
         lock: new Lock(),
@@ -68,30 +68,34 @@ export async function adventureReaction(
     session: AdventureSession,
     optionIndex: number
 ): Promise<AdventureResult | void> {
-    const option = session.lastOptions[optionIndex];
-    const optionMessage: ChatCompletionRequestMessage = {
-        role: "user",
-        content: option,
-    };
+    try {
+        const option = session.lastOptions[optionIndex];
+        const optionMessage: ChatCompletionRequestMessage = {
+            role: "user",
+            content: option,
+        };
 
-    const completion = await ai.chatCompletion([
-        {role: "system", content: createSystemPrompt(session.theme)},
-        session.messages[0].summary,
-        ...session.messages.slice(1).map(m => m.message),
-        optionMessage,
-    ]);
-    if (!completion || !completion.content) throw new Error("No completion");
-    const summary = await generateSummary(session, completion); 
-    session.messages.push({message: completion, summary});
-    session.messages = session.messages.slice(-10);
+        const completion = await ai.chatCompletion([
+            { role: "system", content: createSystemPrompt(session.theme) },
+            session.messages[0].summary,
+            ...session.messages.slice(1).map(m => m.message),
+            optionMessage,
+        ]);
+        if (!completion || !completion.content) throw new Error("No completion");
+        const summary = await generateSummary(session, completion);
+        session.messages.push({ message: completion, summary });
+        session.messages = session.messages.slice(-10);
 
-    const options = await getOptions(session);
-    session.lastOptions = options;
+        const options = await getOptions(session);
+        session.lastOptions = options;
 
-    return {
-        message: completion.content,
-        options,
-    };
+        return {
+            message: completion.content,
+            options,
+        };
+    } catch (e) {
+        log.error(e);
+    }
 }
 
 async function getOptions(session: AdventureSession): Promise<string[]> {
@@ -254,7 +258,7 @@ async function generateSummary(session: AdventureSession, newMessage: ChatComple
 
     const parameters = JSON.parse(completion.function_call!.arguments!);
     log.debug("summary: ", parameters.summary);
-    return {role: "assistant", content: parameters.summary};
+    return { role: "assistant", content: parameters.summary };
 }
 
 export const startAdventureCommand: Command<ChatInputCommandInteraction> = {
