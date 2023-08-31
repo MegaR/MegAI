@@ -14,7 +14,8 @@ const log = getLogger("adventure");
 
 interface AdventureSession {
     threadId: string;
-    theme: string,
+    theme: string;
+    plan: ChatCompletionRequestMessage;
     messages: { message: ChatCompletionRequestMessage, summary: ChatCompletionRequestMessage }[];
     lastOptions: string[];
     lock: Lock;
@@ -25,35 +26,35 @@ export interface AdventureResult {
     options: string[];
 }
 
-function createSystemPrompt(theme: string) {
-    return `You are a Adventure AI. You describe the adventure and the user say what the main character does. The theme is ${theme}. Keep it interesting. Write out the dialogs.`;
+function createSystemPrompt(theme: string): ChatCompletionRequestMessage {
+    return { role: 'system', content: `You are a Adventure AI. You describe the adventure and the user say what the main character does. The theme is ${theme}. Keep it interesting. Write out the dialogs. You can use markdown.` };
 }
 
 async function startAdventure(
     threadId: string,
     theme: string
 ): Promise<AdventureResult> {
-    const systemPrompt: ChatCompletionRequestMessage = {
-        role: "system",
-        content: createSystemPrompt(theme),
+    const session: AdventureSession = {
+        threadId,
+        theme,
+        plan: {role: 'system', content: 'Current plan: none'},
+        messages: [],
+        lastOptions: [],
+        lock: new Lock(),
     };
+
+    const plan = await updatePlan(session);
+
+    const systemPrompt: ChatCompletionRequestMessage = createSystemPrompt(theme);
     const completion = await ai.chatCompletion([
         systemPrompt,
+        plan,
         { role: "system", content: "Start with an intro" },
     ]);
 
     if (!completion || !completion.content) throw new Error("No completion");
 
-    const session: AdventureSession = {
-        threadId,
-        theme,
-        messages: [
-            { message: completion, summary: completion },
-        ],
-        lastOptions: [],
-        lock: new Lock(),
-    };
-
+    session.messages.push({message: completion, summary: completion});
     const options = await getOptions(session);
     session.lastOptions = options;
 
@@ -62,40 +63,6 @@ async function startAdventure(
         message: completion.content,
         options,
     };
-}
-
-export async function adventureReaction(
-    session: AdventureSession,
-    optionIndex: number
-): Promise<AdventureResult | void> {
-    try {
-        const option = session.lastOptions[optionIndex];
-        const optionMessage: ChatCompletionRequestMessage = {
-            role: "user",
-            content: option,
-        };
-
-        const completion = await ai.chatCompletion([
-            { role: "system", content: createSystemPrompt(session.theme) },
-            session.messages[0].summary,
-            ...session.messages.slice(1).map(m => m.message),
-            optionMessage,
-        ]);
-        if (!completion || !completion.content) throw new Error("No completion");
-        const summary = await generateSummary(session, completion);
-        session.messages.push({ message: completion, summary });
-        session.messages = session.messages.slice(-10);
-
-        const options = await getOptions(session);
-        session.lastOptions = options;
-
-        return {
-            message: completion.content,
-            options,
-        };
-    } catch (e) {
-        log.error(e);
-    }
 }
 
 async function getOptions(session: AdventureSession): Promise<string[]> {
@@ -119,6 +86,7 @@ async function getOptions(session: AdventureSession): Promise<string[]> {
     };
     const completion = await ai.chatCompletion(
         [
+            createSystemPrompt(session.theme),
             session.messages[0].summary,
             ...session.messages.slice(1).map(m => m.message),
         ],
@@ -151,9 +119,32 @@ export async function handleAdventureReactions(reaction: MessageReaction | Parti
 
     await session.lock.acquire();
     try {
-        const result = await adventureReaction(session, index);
-        if (!result) return;
-        await handleAdventureResult(channel, result);
+        const option = session.lastOptions[index];
+        const optionMessage: ChatCompletionRequestMessage = {
+            role: "user",
+            content: option,
+        };
+
+        const completion = await ai.chatCompletion([
+            createSystemPrompt(session.theme),
+            session.plan,
+            session.messages[0].summary,
+            ...session.messages.slice(1).map(m => m.message),
+            optionMessage,
+        ]);
+        if (!completion || !completion.content) throw new Error("No completion");
+        const summary = await generateSummary(session, completion);
+        session.messages.push({ message: completion, summary });
+        session.messages = session.messages.slice(-10);
+
+        session.plan = await updatePlan(session);
+
+        const options = await getOptions(session);
+        session.lastOptions = options;
+
+        await handleAdventureResult(channel, {message: completion.content, options: session.lastOptions});
+    } catch(e) {
+        log.error(e);
     } finally {
         session.lock.release();
     }
@@ -259,6 +250,50 @@ async function generateSummary(session: AdventureSession, newMessage: ChatComple
     const parameters = JSON.parse(completion.function_call!.arguments!);
     log.debug("summary: ", parameters.summary);
     return { role: "assistant", content: parameters.summary };
+}
+
+async function updatePlan(session: AdventureSession): Promise<ChatCompletionRequestMessage> {
+    const functionDef = {
+        name: "update_plan",
+        description: "Update the plan for the story. Plan out expected plot, fail conditions and characters. Don't make the plan too large",
+        parameters: {
+            type: "object",
+            properties: {
+                plan: {
+                    type: "string",
+                    description:
+                        "Full updated plan",
+                },
+            },
+            required: ["plan"],
+        },
+    };
+
+    let messages:ChatCompletionRequestMessage[] = [];
+    if(session.messages.length > 0) {
+        messages = [
+            session.messages[0].summary,
+            ...session.messages.slice(1).map(m => m.message),
+        ];
+    }
+
+
+    const completion = await ai.chatCompletion(
+        [
+            createSystemPrompt(session.theme),
+            ...messages,
+        ],
+        [functionDef],
+        {
+            name: "update_plan",
+        }
+    );
+
+    if (!completion || !completion.function_call) throw new Error("No summary");
+
+    const parameters = JSON.parse(completion.function_call!.arguments!);
+    log.debug("plan: ", parameters.plan);
+    return { role: 'system', content: `Current plan: ${parameters.plan}` };
 }
 
 export const startAdventureCommand: Command<ChatInputCommandInteraction> = {
