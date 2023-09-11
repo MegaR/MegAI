@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "bun ./src/index.ts",
-    "start:dev": "bun ./src/index.ts --watch"
+    "start": "bun --bun ./src/index.ts",
+    "start:dev": "bun --bun ./src/index.ts --watch"
   },
   "repository": {
     "type": "git",
