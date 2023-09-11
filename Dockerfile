@@ -1,8 +1,8 @@
-FROM node:20
+FROM oven/bun
 
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
+COPY package*.json bun.lockb ./
+RUN bun install && bun run prisma generate
 COPY . .
-RUN npm run build && npx prisma generate
-CMD ["npm", "run", "start"]
+RUN bunx prisma generate
+CMD bun run start
