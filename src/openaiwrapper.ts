@@ -36,6 +36,21 @@ async function chatCompletion(
     }
 }
 
+async function instruct(prompt: string) {
+    await lock.acquire();
+    try {
+        const completion = await openai?.createCompletion({
+            model: "gpt-3.5-turbo-instruct",
+            max_tokens: 512,
+            temperature: 1,
+            prompt,
+        });
+        return completion.data.choices?.[0].text;
+    } finally {
+        lock.release();
+    }
+}
+
 async function embedding(input: CreateEmbeddingRequestInput) {
     await lock.acquire();
     try {
@@ -49,4 +64,4 @@ async function embedding(input: CreateEmbeddingRequestInput) {
     }
 }
 
-export const ai = { chatCompletion, embedding };
+export const ai = { chatCompletion, embedding, instruct };

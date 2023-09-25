@@ -19,6 +19,7 @@ import { DateTime } from "luxon";
 import { tts } from "./tts";
 import { getLogger } from "./logger";
 import { handleAdventureReactions, startAdventureCommand } from "./commands/adventure.command";
+import { instructCommand } from "./commands/instruct.command";
 
 const log = getLogger("main");
 
@@ -57,6 +58,10 @@ async function start() {
         if (interaction.commandName === "startadventure") {
             if (!interaction.isChatInputCommand()) return;
             startAdventureCommand.handleCommand(client, interaction);
+        }
+        if (interaction.commandName === "instruct") {
+            if (!interaction.isChatInputCommand()) return;
+            instructCommand.handleCommand(client, interaction);
         }
     });
 
@@ -161,10 +166,6 @@ async function start() {
                     .setRequired(true)
             );
 
-        const stopAdventureCommand = new SlashCommandBuilder()
-            .setName("stopadventure")
-            .setDescription("Stop an active adventure session");
-
         await client.rest.put(
             Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!),
             {
@@ -173,7 +174,7 @@ async function start() {
                     rememberCommand,
                     recallCommand,
                     startAdventureCommand.definition,
-                    stopAdventureCommand,
+                    instructCommand.definition,
                 ],
             }
         );
