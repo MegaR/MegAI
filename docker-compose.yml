@@ -3,7 +3,7 @@ version: '3.8'
 services:
   db:
     image: ankane/pgvector
-    restart: always
+    restart: "no"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
@@ -23,3 +23,13 @@ services:
     volumes:
       - ./models:/models:cached
     restart: "no"
+
+  nocodb:
+    image: nocodb/nocodb:latest
+    restart: "no"
+    environment:
+      NC_DB: pg://db:5432?u=postgres&p=example&d=mydatabase
+    volumes:
+      - ./nocodb-data:/usr/app/data/
+    ports:
+      - 8081:8080
