@@ -37,7 +37,7 @@ async function startAdventure(
     const session: AdventureSession = {
         threadId,
         theme,
-        plan: {role: 'system', content: 'Current plan: none'},
+        plan: { role: 'system', content: 'Current plan: none' },
         messages: [],
         lastOptions: [],
         lock: new Lock(),
@@ -54,7 +54,7 @@ async function startAdventure(
 
     if (!completion || !completion.content) throw new Error("No completion");
 
-    session.messages.push({message: completion, summary: completion});
+    session.messages.push({ message: completion, summary: completion });
     const options = await getOptions(session);
     session.lastOptions = options;
 
@@ -90,10 +90,12 @@ async function getOptions(session: AdventureSession): Promise<string[]> {
             session.messages[0].summary,
             ...session.messages.slice(1).map(m => m.message),
         ],
-        [functionDef],
         {
-            name: "create_options",
-        }
+            functions: [functionDef],
+            function_call: {
+                name: "create_options",
+            }
+        },
     );
 
     if (!completion || !completion.function_call) throw new Error("No options");
@@ -142,8 +144,8 @@ export async function handleAdventureReactions(reaction: MessageReaction | Parti
         const options = await getOptions(session);
         session.lastOptions = options;
 
-        await handleAdventureResult(channel, {message: completion.content, options: session.lastOptions});
-    } catch(e) {
+        await handleAdventureResult(channel, { message: completion.content, options: session.lastOptions });
+    } catch (e) {
         log.error(e);
     } finally {
         session.lock.release();
@@ -205,10 +207,12 @@ async function generateSceneDescription(story: string) {
             role: "system",
             content: `Render an image to accompany the following text: ${story}`,
         }],
-        [functionDef],
         {
-            name: "render_image",
-        }
+            functions: [functionDef],
+            function_call: {
+                name: "render_image",
+            }
+        },
     );
 
     if (!completion || !completion.function_call) throw new Error("No image prompt");
@@ -239,10 +243,12 @@ async function generateSummary(session: AdventureSession, newMessage: ChatComple
             ...session.messages.slice(1).map(m => m.message),
             newMessage
         ],
-        [functionDef],
         {
-            name: "submit_summary",
-        }
+            functions: [functionDef],
+            function_call: {
+                name: "submit_summary",
+            }
+        },
     );
 
     if (!completion || !completion.function_call) throw new Error("No summary");
@@ -269,8 +275,8 @@ async function updatePlan(session: AdventureSession): Promise<ChatCompletionRequ
         },
     };
 
-    let messages:ChatCompletionRequestMessage[] = [];
-    if(session.messages.length > 0) {
+    let messages: ChatCompletionRequestMessage[] = [];
+    if (session.messages.length > 0) {
         messages = [
             session.messages[0].summary,
             ...session.messages.slice(1).map(m => m.message),
@@ -283,10 +289,12 @@ async function updatePlan(session: AdventureSession): Promise<ChatCompletionRequ
             createSystemPrompt(session.theme),
             ...messages,
         ],
-        [functionDef],
         {
-            name: "update_plan",
-        }
+            functions: [functionDef],
+            function_call: {
+                name: "update_plan",
+            }
+        },
     );
 
     if (!completion || !completion.function_call) throw new Error("No summary");

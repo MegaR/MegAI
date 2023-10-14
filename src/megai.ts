@@ -90,7 +90,7 @@ export class MegAI {
         try {
             completion = await ai.chatCompletion(
                 session.history,
-                this.tools.map((tool) => tool.definition)
+                { functions: this.tools.map((tool) => tool.definition) },
             );
         } catch (e: any) {
             if (e?.response?.data?.error?.type === "server_error") {

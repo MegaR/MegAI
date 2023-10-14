@@ -2,6 +2,7 @@ import {
     ChatCompletionFunctions,
     ChatCompletionRequestMessage,
     Configuration,
+    CreateChatCompletionRequest,
     CreateChatCompletionRequestFunctionCall,
     CreateEmbeddingRequestInput,
     OpenAIApi,
@@ -16,8 +17,7 @@ const lock = new Lock();
 
 async function chatCompletion(
     messages: ChatCompletionRequestMessage[],
-    functions?: ChatCompletionFunctions[],
-    functionCall?: CreateChatCompletionRequestFunctionCall
+    options?: Partial<CreateChatCompletionRequest>,
 ) {
     await lock.acquire();
     try {
@@ -25,10 +25,9 @@ async function chatCompletion(
             model: process.env.GPT_MODEL || "gpt-3.5-turbo-0613",
             temperature: 0.5,
             messages,
-            functions,
-            function_call: functionCall,
             frequency_penalty: 2,
             presence_penalty: 2,
+            ...options,
         });
         return completion.data.choices?.[0].message;
     } finally {
