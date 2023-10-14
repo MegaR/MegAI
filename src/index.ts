@@ -20,6 +20,7 @@ import { tts } from "./tts";
 import { getLogger } from "./logger";
 import { handleAdventureReactions, startAdventureCommand } from "./commands/adventure.command";
 import { instructCommand } from "./commands/instruct.command";
+import { summaryCommand } from "./commands/summary.command";
 
 const log = getLogger("main");
 
@@ -62,6 +63,10 @@ async function start() {
         if (interaction.commandName === "instruct") {
             if (!interaction.isChatInputCommand()) return;
             instructCommand.handleCommand(client, interaction);
+        }
+        if (interaction.commandName === "summary") {
+            if (!interaction.isChatInputCommand()) return;
+            summaryCommand.handleCommand(client, interaction);
         }
     });
 
@@ -175,6 +180,7 @@ async function start() {
                     recallCommand,
                     startAdventureCommand.definition,
                     instructCommand.definition,
+                    summaryCommand.definition,
                 ],
             }
         );
