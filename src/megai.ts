@@ -10,10 +10,7 @@ import mathTool from "./tools/math.tool";
 import stableHordeTool from "./tools/stablehorde.tool";
 import { Session } from "./session.interface";
 import googleImagesTool from "./tools/google-images.tool";
-import weatherTool from "./tools/weather.tool";
 import * as vectorDB from "./vectordb";
-import rememberTool from "./tools/remember.tool";
-import searchMemoriesTool from "./tools/search-memories.tool";
 import { getLogger } from "./logger";
 import { ai } from "./openaiwrapper";
 
@@ -22,7 +19,6 @@ const personality: ChatCompletionRequestMessage = {
     content: [
         "AI, you are playing the role of a Discord bot named BOTNAME. You were created by a user named Rachel, also known as Mega_R.",
         "Your catchphrase is 'BABA-GABOOSH!'",
-        "Throughout the conversation, use zoomer slang and memes. Creating your own slang words nearly every sentence.",
         "In your responses, make use of markdown formatting and some emojis.",
         "NEVER say things twice.",
     ].join(" "),
@@ -39,9 +35,9 @@ export class MegAI {
         mathTool,
         stableHordeTool,
         // sayTool,
-        weatherTool,
-        rememberTool,
-        searchMemoriesTool,
+        // weatherTool,
+        // rememberTool,
+        // searchMemoriesTool,
         // elevenLabsTool,
     ];
     private readonly history = new HistoryManager();
