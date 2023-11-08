@@ -64,7 +64,7 @@ async function dalle(prompt: string) {
             prompt,
             model: 'dall-e-3',
             size: '1024x1024',
-            quality: 'hd',
+            quality: 'standard',
             response_format: 'b64_json',
         });
         logger.debug(response.data[0].revised_prompt);
