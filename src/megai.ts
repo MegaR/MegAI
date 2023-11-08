@@ -1,7 +1,3 @@
-import {
-    ChatCompletionRequestMessage,
-    ChatCompletionResponseMessage,
-} from "openai";
 import Tool from "./tool.interface";
 import googleTool from "./tools/google.tool";
 import wikipediaTool from "./tools/wikipedia.tool";
@@ -13,8 +9,10 @@ import googleImagesTool from "./tools/google-images.tool";
 import * as vectorDB from "./vectordb";
 import { getLogger } from "./logger";
 import { ai } from "./openaiwrapper";
+import { ChatCompletionAssistantMessageParam, ChatCompletionSystemMessageParam, ChatCompletionToolMessageParam, ChatCompletionUserMessageParam } from "openai/resources/chat/completions";
+import dalleTool from "./tools/dalle.tool";
 
-const personality: ChatCompletionRequestMessage = {
+const personality: ChatCompletionSystemMessageParam = {
     role: "system",
     content: [
         "AI, you are playing the role of a Discord bot named BOTNAME. You were created by a user named Rachel, also known as Mega_R.",
@@ -33,7 +31,8 @@ export class MegAI {
         googleImagesTool,
         wikipediaTool,
         mathTool,
-        stableHordeTool,
+        // stableHordeTool,
+        dalleTool,
         // sayTool,
         // weatherTool,
         // rememberTool,
@@ -50,20 +49,19 @@ export class MegAI {
     }
 
     async reply(
-        username: string,
         prompt: string,
+        images: Blob[],
         update: updateCallback
     ): Promise<Session> {
-        const message: ChatCompletionRequestMessage = {
+        const message: ChatCompletionUserMessageParam = {
             role: "user",
-            name: username,
             content: prompt,
         };
         this.history.addMessage(message);
         const memories = await this.recall(prompt);
         await this.remember(prompt);
 
-        const memoriesPrompt: ChatCompletionRequestMessage = {
+        const memoriesPrompt: ChatCompletionSystemMessageParam = {
             role: "system",
             content: `Memories:\n${memories.map((m) => m.content).join("\n")}`,
         };
@@ -90,7 +88,7 @@ export class MegAI {
         try {
             completion = await ai.chatCompletion(
                 session.history,
-                { functions: this.tools.map((tool) => tool.definition) },
+                { tools: this.tools.map((tool) => ({ type: 'function', function: tool.definition })) },
             );
         } catch (e: any) {
             if (e?.response?.data?.error?.type === "server_error") {
@@ -104,14 +102,16 @@ export class MegAI {
         session.history.push(completion);
         this.history.addMessage(completion);
 
-        if (completion.function_call) {
-            const toolResponse = await this.handleFunctionCall(
+        if (completion.tool_calls) {
+            const toolResponses = await this.handleToolCall(
                 completion,
                 session,
                 update
             );
-            this.history.addMessage(toolResponse);
-            session.history.push(toolResponse);
+            for (const response of toolResponses) {
+                this.history.addMessage(response);
+                session.history.push(response);
+            }
             return await this.chatCompletion(session, update);
         }
         this.log.debug(`[${this.botName}] ${completion.content}`);
@@ -119,44 +119,51 @@ export class MegAI {
         update(session);
     }
 
-    private async handleFunctionCall(
-        aiMessage: ChatCompletionResponseMessage,
+    private async handleToolCall(
+        aiMessage: ChatCompletionAssistantMessageParam,
         session: Session,
         update: updateCallback
-    ): Promise<ChatCompletionRequestMessage> {
-        const tool = this.tools.find(
-            (tool) => tool.definition.name === aiMessage.function_call!.name
-        );
-        if (!tool) {
-            this.log.warn(`❌ unknown tool ${aiMessage.function_call!.name}`);
-            return {
-                role: "function",
-                name: aiMessage.function_call!.name,
-                content: `Unknown function ${aiMessage.function_call!.name}`,
-            };
-        }
-        const parameters = JSON.parse(aiMessage.function_call!.arguments!);
-        session.footer.push(
-            `🔧 ${tool.definition.name}: ${JSON.stringify(parameters)}`
-        );
-        await update(session);
-        try {
-            const toolOutput = await tool.execute(parameters, session, this);
-            this.log.debug(toolOutput);
+    ): Promise<ChatCompletionToolMessageParam[]> {
+        const responses: ChatCompletionToolMessageParam[] = [];
+
+        for (const toolCall of aiMessage.tool_calls!) {
+            const tool = this.tools.find(
+                (tool) => tool.definition.name === toolCall.function.name
+            );
+            if (!tool) {
+                this.log.warn(`❌ unknown tool ${toolCall.function.name}`);
+                responses.push({
+                    role: "tool",
+                    tool_call_id: toolCall.id,
+                    content: `Unknown function ${toolCall.function.name}`,
+                });
+                continue;
+            }
+            const parameters = JSON.parse(toolCall.function.arguments);
+            session.footer.push(
+                `🔧 ${toolCall.function.name}: ${JSON.stringify(parameters)}`
+            );
             await update(session);
-            return {
-                role: "function",
-                name: tool.definition.name,
-                content: toolOutput,
-            };
-        } catch (e: any) {
-            this.log.error(e);
-            return {
-                role: "function",
-                name: tool.definition.name,
-                content: `Error: ${e.toString()}`,
-            };
+            try {
+                const toolOutput = await tool.execute(parameters, session, this);
+                this.log.debug(toolOutput);
+                await update(session);
+                responses.push({
+                    role: "tool",
+                    tool_call_id: toolCall.id,
+                    content: toolOutput,
+                });
+            } catch (e: any) {
+                this.log.error(e);
+                responses.push({
+                    role: "tool",
+                    tool_call_id: toolCall.id,
+                    content: `Error: ${e.toString()}`,
+                });
+            }
+
         }
+        return responses;
     }
 
     public async remember(content: string) {

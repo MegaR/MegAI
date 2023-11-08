@@ -1,4 +1,3 @@
-import { ChatCompletionRequestMessage } from "openai";
 import { ai } from "../openaiwrapper";
 import { getLogger } from "../logger";
 import Lock from "../lock";
@@ -6,6 +5,7 @@ import Command from "./command.interface";
 import { AnyThreadChannel, AttachmentBuilder, ChatInputCommandInteraction, Client, EmbedBuilder, MessageReaction, PartialMessageReaction, SlashCommandBuilder, ThreadAutoArchiveDuration } from "discord.js";
 import { tts } from "../tts";
 import { pollinations } from "../tools/pollinations.tool";
+import { ChatCompletionMessageParam, ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam } from "openai/resources";
 
 const adventureEmojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣"];
 
@@ -15,8 +15,8 @@ const log = getLogger("adventure");
 interface AdventureSession {
     threadId: string;
     theme: string;
-    plan: ChatCompletionRequestMessage;
-    messages: { message: ChatCompletionRequestMessage, summary: ChatCompletionRequestMessage }[];
+    plan: ChatCompletionMessageParam;
+    messages: { message: ChatCompletionMessageParam, summary: ChatCompletionMessageParam}[];
     lastOptions: string[];
     lock: Lock;
 }
@@ -26,7 +26,7 @@ export interface AdventureResult {
     options: string[];
 }
 
-function createSystemPrompt(theme: string): ChatCompletionRequestMessage {
+function createSystemPrompt(theme: string): ChatCompletionSystemMessageParam {
     return { role: 'system', content: `You are a Adventure AI. You describe the adventure and the user say what the main character does. The theme is ${theme}. Keep it interesting. Write out the dialogs. You can use markdown.` };
 }
 
@@ -45,7 +45,7 @@ async function startAdventure(
 
     const plan = await updatePlan(session);
 
-    const systemPrompt: ChatCompletionRequestMessage = createSystemPrompt(theme);
+    const systemPrompt: ChatCompletionSystemMessageParam = createSystemPrompt(theme);
     const completion = await ai.chatCompletion([
         systemPrompt,
         plan,
@@ -122,7 +122,7 @@ export async function handleAdventureReactions(reaction: MessageReaction | Parti
     await session.lock.acquire();
     try {
         const option = session.lastOptions[index];
-        const optionMessage: ChatCompletionRequestMessage = {
+        const optionMessage: ChatCompletionUserMessageParam = {
             role: "user",
             content: option,
         };
@@ -221,7 +221,7 @@ async function generateSceneDescription(story: string) {
     return parameters.prompt;
 }
 
-async function generateSummary(session: AdventureSession, newMessage: ChatCompletionRequestMessage): Promise<ChatCompletionRequestMessage> {
+async function generateSummary(session: AdventureSession, newMessage: ChatCompletionMessageParam): Promise<ChatCompletionMessageParam> {
     const functionDef = {
         name: "submit_summary",
         description: "Save a summary of the entire story so far. Include characters and events ect.",
@@ -258,7 +258,7 @@ async function generateSummary(session: AdventureSession, newMessage: ChatComple
     return { role: "assistant", content: parameters.summary };
 }
 
-async function updatePlan(session: AdventureSession): Promise<ChatCompletionRequestMessage> {
+async function updatePlan(session: AdventureSession): Promise<ChatCompletionMessageParam> {
     const functionDef = {
         name: "update_plan",
         description: "Update the plan for the story. Plan out expected plot, fail conditions and characters. Don't make the plan too large",
@@ -275,7 +275,7 @@ async function updatePlan(session: AdventureSession): Promise<ChatCompletionRequ
         },
     };
 
-    let messages: ChatCompletionRequestMessage[] = [];
+    let messages: ChatCompletionMessageParam[] = [];
     if (session.messages.length > 0) {
         messages = [
             session.messages[0].summary,

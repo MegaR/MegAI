@@ -21,6 +21,7 @@ import { getLogger } from "./logger";
 import { handleAdventureReactions, startAdventureCommand } from "./commands/adventure.command";
 import { instructCommand } from "./commands/instruct.command";
 import { summaryCommand } from "./commands/summary.command";
+import { dalleCommand } from "./commands/dalle.command";
 
 const log = getLogger("main");
 
@@ -68,6 +69,10 @@ async function start() {
             if (!interaction.isChatInputCommand()) return;
             summaryCommand.handleCommand(client, interaction);
         }
+        if (interaction.commandName === "dalle") {
+            if(!interaction.isChatInputCommand()) return;
+            dalleCommand.handleCommand(client, interaction);
+        }
     });
 
     client.on(Events.MessageReactionAdd, async (reaction, user) => {
@@ -109,8 +114,13 @@ async function start() {
         try {
             const user = message.author.username;
             const prompt = formatPrompt(user, message);
+            let images: Blob[] = [];
+            for (const attachment of message.attachments) {
+                const image = await (await fetch(attachment[1].url)).blob();
+                images.push(image);
+            }
             log.debug(prompt);
-            const session = await megAI.reply(user, prompt, async (s) => {
+            const session = await megAI.reply(prompt, images, async (s) => {
                 await updateMessage(reply, s);
             });
             if (session) {
@@ -181,6 +191,7 @@ async function start() {
                     startAdventureCommand.definition,
                     instructCommand.definition,
                     summaryCommand.definition,
+                    dalleCommand.definition,
                 ],
             }
         );

@@ -1,8 +1,8 @@
-import { ChatCompletionRequestMessage } from "openai";
+import { ChatCompletionMessageParam } from "openai/resources";
 
 export default class HistoryManager {
-    messages: ChatCompletionRequestMessage[] = [];
-    addMessage(message: ChatCompletionRequestMessage) {
+    messages: ChatCompletionMessageParam[] = [];
+    addMessage(message: ChatCompletionMessageParam) {
         this.messages.push(message);
         this.messages = this.messages.slice(-10);
     }
