@@ -69,7 +69,7 @@ async function start() {
             if (!interaction.isChatInputCommand()) return;
             summaryCommand.handleCommand(client, interaction);
         }
-        if (interaction.commandName === "dalle") {
+        if (interaction.commandName === "image") {
             if(!interaction.isChatInputCommand()) return;
             dalleCommand.handleCommand(client, interaction);
         }
