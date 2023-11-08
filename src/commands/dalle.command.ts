@@ -25,6 +25,7 @@ export const dalleCommand: Command<ChatInputCommandInteraction> = {
             const image = await ai.dalle(prompt.value as string);
             const data = Buffer.from(image, "base64");
             await reply.edit({
+                content: prompt.value as string,
                 files: [
                     new AttachmentBuilder(data, {
                         name: 'image.png'

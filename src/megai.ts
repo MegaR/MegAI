@@ -25,7 +25,7 @@ const personality: ChatCompletionSystemMessageParam = {
 type updateCallback = (session: Session) => Promise<void>;
 
 export class MegAI {
-    private readonly log = getLogger("OpenAiWrapper");
+    private readonly log = getLogger("MegAI");
     private readonly tools: Tool[] = [
         googleTool,
         googleImagesTool,
@@ -109,7 +109,7 @@ export class MegAI {
                 update
             );
             for (const response of toolResponses) {
-                this.history.addMessage(response);
+                // this.history.addMessage(response);
                 session.history.push(response);
             }
             return await this.chatCompletion(session, update);
@@ -127,6 +127,7 @@ export class MegAI {
         const responses: ChatCompletionToolMessageParam[] = [];
 
         for (const toolCall of aiMessage.tool_calls!) {
+            this.log.debug('tool call: ', toolCall.function.name);
             const tool = this.tools.find(
                 (tool) => tool.definition.name === toolCall.function.name
             );
@@ -146,7 +147,7 @@ export class MegAI {
             await update(session);
             try {
                 const toolOutput = await tool.execute(parameters, session, this);
-                this.log.debug(toolOutput);
+                this.log.debug('Tool output: ', toolOutput);
                 await update(session);
                 responses.push({
                     role: "tool",
