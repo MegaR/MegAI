@@ -7,7 +7,7 @@ const log = getLogger("dalleCommand");
 
 export const dalleCommand: Command<ChatInputCommandInteraction> = {
     definition: new SlashCommandBuilder()
-        .setName("dalle")
+        .setName("image")
         .setDescription("Use Dall-e3 to generate an image.")
         .addStringOption((option) =>
             option
