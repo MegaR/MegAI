@@ -102,7 +102,6 @@ export class MegAI {
         if (!completion) throw new Error("No completion");
 
         session.history.push(completion);
-        this.history.addMessage(completion);
 
         if (completion.tool_calls) {
             const toolResponses = await this.handleToolCall(
@@ -114,6 +113,7 @@ export class MegAI {
             session.history = session.history.concat(toolResponses);
             return await this.chatCompletion(session, update);
         }
+        this.history.addMessage(completion);
         this.log.debug(`[${this.botName}] ${completion.content}`);
         session.responses.push(completion.content!);
         update(session);
