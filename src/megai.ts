@@ -88,7 +88,9 @@ export class MegAI {
         try {
             completion = await ai.chatCompletion(
                 session.history,
-                { tools: this.tools.map((tool) => ({ type: 'function', function: tool.definition })) },
+                {
+                    tools: this.tools.map((tool) => ({ type: 'function', function: tool.definition }))
+                },
             );
         } catch (e: any) {
             if (e?.response?.data?.error?.type === "server_error") {
@@ -108,10 +110,8 @@ export class MegAI {
                 session,
                 update
             );
-            for (const response of toolResponses) {
-                // this.history.addMessage(response);
-                session.history.push(response);
-            }
+
+            session.history = session.history.concat(toolResponses);
             return await this.chatCompletion(session, update);
         }
         this.log.debug(`[${this.botName}] ${completion.content}`);
@@ -127,25 +127,25 @@ export class MegAI {
         const responses: ChatCompletionToolMessageParam[] = [];
 
         for (const toolCall of aiMessage.tool_calls!) {
-            this.log.debug('tool call: ', toolCall.function.name);
-            const tool = this.tools.find(
-                (tool) => tool.definition.name === toolCall.function.name
-            );
-            if (!tool) {
-                this.log.warn(`❌ unknown tool ${toolCall.function.name}`);
-                responses.push({
-                    role: "tool",
-                    tool_call_id: toolCall.id,
-                    content: `Unknown function ${toolCall.function.name}`,
-                });
-                continue;
-            }
-            const parameters = JSON.parse(toolCall.function.arguments);
-            session.footer.push(
-                `🔧 ${toolCall.function.name}: ${JSON.stringify(parameters)}`
-            );
-            await update(session);
             try {
+                this.log.debug('tool call: ', toolCall.function.name);
+                const tool = this.tools.find(
+                    (tool) => tool.definition.name === toolCall.function.name
+                );
+                if (!tool) {
+                    this.log.warn(`❌ unknown tool ${toolCall.function.name}`);
+                    responses.push({
+                        role: "tool",
+                        tool_call_id: toolCall.id,
+                        content: `Unknown function ${toolCall.function.name}`,
+                    });
+                    continue;
+                }
+                const parameters = JSON.parse(toolCall.function.arguments);
+                session.footer.push(
+                    `🔧 ${toolCall.function.name}: ${JSON.stringify(parameters)}`
+                );
+                await update(session);
                 const toolOutput = await tool.execute(parameters, session, this);
                 this.log.debug('Tool output: ', toolOutput);
                 await update(session);
