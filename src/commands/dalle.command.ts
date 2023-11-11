@@ -16,6 +16,10 @@ export const dalleCommand: Command<ChatInputCommandInteraction> = {
                 .setRequired(true)
         ),
     handleCommand: async (_client: Client, interaction: ChatInputCommandInteraction) => {
+        if(interaction.user.id !== process.env.ADMIN) {
+            await interaction.reply("❌ You are not authorized to use this command.");
+            return;
+        }
         const reply = await interaction.reply("🎨 painting...");
 
         try {

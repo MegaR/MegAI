@@ -51,6 +51,7 @@ export class MegAI {
     }
 
     async reply(
+        userId: string,
         prompt: string,
         images: Blob[],
         update: updateCallback
@@ -74,6 +75,7 @@ export class MegAI {
         ];
         const session: Session = {
             history,
+            userId,
             responses: [],
             attachments: [],
             footer: [],
@@ -86,12 +88,17 @@ export class MegAI {
         session: Session,
         update: updateCallback
     ): Promise<void> {
+        let tools = this.tools;
+        if (session.userId !== process.env.ADMIN) {
+            tools = this.tools.filter(tool => tool.adminOnly === undefined);
+        }
+
         let completion;
         try {
             completion = await ai.chatCompletion(
                 session.history,
                 {
-                    tools: this.tools.map((tool) => ({ type: 'function', function: tool.definition }))
+                    tools: tools.map((tool) => ({ type: 'function', function: tool.definition }))
                 },
             );
         } catch (e: any) {

@@ -120,7 +120,7 @@ async function start() {
                 images.push(image);
             }
             log.debug(prompt);
-            await megAI.reply(prompt, images, async (s) => {
+            await megAI.reply(message.author.id, prompt, images, async (s) => {
                 await updateMessage(reply, s);
             });
             // if (session) {

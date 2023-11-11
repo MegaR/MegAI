@@ -6,6 +6,7 @@ import { ai } from "../openaiwrapper";
 const log = getLogger('dalle-tool');
 
 const dalleTool: Tool = {
+    adminOnly: true,
     definition: {
         name: "image_generator",
         description: "Generate an image based on a prompt",
