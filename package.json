@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@googleapis/customsearch": "^1.0.0",
+    "@googleapis/places": "^3.0.0",
     "@prisma/client": "latest",
     "@types/markdown-it": "^13.0.6",
     "@types/puppeteer": "^7.0.4",

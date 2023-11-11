@@ -12,6 +12,7 @@ import { ai } from "./openaiwrapper";
 import { ChatCompletionAssistantMessageParam, ChatCompletionSystemMessageParam, ChatCompletionToolMessageParam, ChatCompletionUserMessageParam } from "openai/resources/chat/completions";
 import dalleTool from "./tools/dalle.tool";
 import browserTool from "./tools/browser.tool";
+import googlePlacesTool from "./tools/google-places.tool";
 
 const personality: ChatCompletionSystemMessageParam = {
     role: "system",
@@ -30,6 +31,7 @@ export class MegAI {
     private readonly tools: Tool[] = [
         googleTool,
         googleImagesTool,
+        googlePlacesTool,
         wikipediaTool,
         mathTool,
         // stableHordeTool,
@@ -137,7 +139,7 @@ export class MegAI {
 
         for (const toolCall of aiMessage.tool_calls!) {
             try {
-                this.log.debug('tool call: ', toolCall.function.name);
+                this.log.debug('tool call:', toolCall.function.name);
                 const tool = this.tools.find(
                     (tool) => tool.definition.name === toolCall.function.name
                 );
