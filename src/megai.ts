@@ -11,6 +11,7 @@ import { getLogger } from "./logger";
 import { ai } from "./openaiwrapper";
 import { ChatCompletionAssistantMessageParam, ChatCompletionSystemMessageParam, ChatCompletionToolMessageParam, ChatCompletionUserMessageParam } from "openai/resources/chat/completions";
 import dalleTool from "./tools/dalle.tool";
+import browserTool from "./tools/browser.tool";
 
 const personality: ChatCompletionSystemMessageParam = {
     role: "system",
@@ -33,6 +34,7 @@ export class MegAI {
         mathTool,
         // stableHordeTool,
         dalleTool,
+        browserTool,
         // sayTool,
         // weatherTool,
         // rememberTool,

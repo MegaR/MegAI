@@ -120,14 +120,14 @@ async function start() {
                 images.push(image);
             }
             log.debug(prompt);
-            const session = await megAI.reply(prompt, images, async (s) => {
+            await megAI.reply(prompt, images, async (s) => {
                 await updateMessage(reply, s);
             });
-            if (session) {
-                const audio = await tts(session.responses.join("\n"));
-                session.attachments.push({ file: audio, name: "tts.mp3" });
-                await updateMessage(reply, session);
-            }
+            // if (session) {
+            //     const audio = await tts(session.responses.join("\n"));
+            //     session.attachments.push({ file: audio, name: "tts.mp3" });
+            //     await updateMessage(reply, session);
+            // }
         } catch (error) {
             if ((error as any).response) {
                 log.error("network error: ", (error as any)?.response?.data);

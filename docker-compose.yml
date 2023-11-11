@@ -33,3 +33,11 @@ services:
       - ./nocodb-data:/usr/app/data/
     ports:
       - 8081:8080
+
+  browserless:
+    image: browserless/chrome:latest
+    restart: "no"
+    environment:
+      MAX_CONCURRENT_CONNECTIONS: "10"
+    ports:
+      - 3000:3000
