@@ -29,7 +29,7 @@ const googleTool: Tool = {
                 text: item.snippet,
             };
         });
-        return JSON.stringify(resultsFormatted, null, 2);
+        return JSON.stringify(resultsFormatted || 'No results', null, 2);
     },
 };
 
