@@ -3,10 +3,8 @@ import googleTool from "./tools/google.tool";
 import wikipediaTool from "./tools/wikipedia.tool";
 import HistoryManager from "./historymanager";
 import mathTool from "./tools/math.tool";
-import stableHordeTool from "./tools/stablehorde.tool";
 import { Session } from "./session.interface";
 import googleImagesTool from "./tools/google-images.tool";
-import * as vectorDB from "./vectordb";
 import { getLogger } from "./logger";
 import { ai } from "./openaiwrapper";
 import { ChatCompletionAssistantMessageParam, ChatCompletionSystemMessageParam, ChatCompletionToolMessageParam, ChatCompletionUserMessageParam } from "openai/resources/chat/completions";
@@ -39,8 +37,6 @@ export class MegAI {
         browserTool,
         // sayTool,
         // weatherTool,
-        // rememberTool,
-        // searchMemoriesTool,
         // elevenLabsTool,
     ];
     private readonly history = new HistoryManager();
@@ -63,16 +59,9 @@ export class MegAI {
             content: prompt,
         };
         this.history.addMessage(message);
-        const memories = await this.recall(prompt);
-        await this.remember(prompt);
 
-        const memoriesPrompt: ChatCompletionSystemMessageParam = {
-            role: "system",
-            content: `Memories:\n${memories.map((m) => m.content).join("\n")}`,
-        };
         const history = [
             personality,
-            memoriesPrompt,
             ...this.history.getHistory(),
         ];
         const session: Session = {
@@ -176,19 +165,5 @@ export class MegAI {
 
         }
         return responses;
-    }
-
-    public async remember(content: string) {
-        const response = await ai.embedding(content);
-        if (!response) throw new Error("No response");
-        const embedding = response[0].embedding;
-        await vectorDB.saveMemory(content, embedding);
-    }
-
-    public async recall(query: string) {
-        const response = await ai.embedding(query);
-        if (!response) throw new Error("No response");
-        const embedding = response[0].embedding;
-        return await vectorDB.getNearestMemories(embedding, 10);
     }
 }

@@ -49,14 +49,6 @@ async function start() {
             if (!interaction.isMessageContextMenuCommand()) return;
             handleReplyCommand(interaction);
         }
-        if (interaction.commandName === "remember") {
-            if (!interaction.isMessageContextMenuCommand()) return;
-            handleRememberCommand(interaction);
-        }
-        if (interaction.commandName === "recall") {
-            if (!interaction.isChatInputCommand()) return;
-            handleRecallCommand(interaction);
-        }
         if (interaction.commandName === "startadventure") {
             if (!interaction.isChatInputCommand()) return;
             startAdventureCommand.handleCommand(client, interaction);
@@ -166,28 +158,12 @@ async function start() {
             name: "reply",
             type: ApplicationCommandType.Message,
         };
-        const rememberCommand = {
-            name: "remember",
-            type: ApplicationCommandType.Message,
-        };
-
-        const recallCommand = new SlashCommandBuilder()
-            .setName("recall")
-            .setDescription("search memory")
-            .addStringOption((option) =>
-                option
-                    .setName("query")
-                    .setDescription("search query")
-                    .setRequired(true)
-            );
 
         await client.rest.put(
             Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!),
             {
                 body: [
                     replyCommand,
-                    rememberCommand,
-                    recallCommand,
                     startAdventureCommand.definition,
                     instructCommand.definition,
                     summaryCommand.definition,
@@ -220,40 +196,6 @@ async function start() {
             (interaction as MessageContextMenuCommandInteraction).targetMessage,
             megAI
         );
-    }
-
-    async function handleRememberCommand(
-        interaction: MessageContextMenuCommandInteraction
-    ) {
-        const targetMessage = interaction.targetMessage;
-        if (targetMessage.cleanContent.trim() === "") {
-            await interaction.reply({
-                content: "I can't remember this message 😔.",
-                ephemeral: true,
-            });
-            return;
-        }
-        megAI.remember(
-            formatPrompt(targetMessage.author.username, targetMessage)
-        );
-        await interaction.reply({
-            content: `remembering`,
-            ephemeral: true,
-        });
-        await targetMessage.reply({
-            content: `${client.user?.username} will remember that.`,
-        });
-    }
-
-    async function handleRecallCommand(
-        interaction: ChatInputCommandInteraction
-    ) {
-        await interaction.deferReply();
-        const query = interaction.options.get("query", true);
-        const memories = await megAI.recall(query.value as string);
-        await interaction.editReply({
-            content: "Memories: \n" + memories.map((m) => m.content).join("\n"),
-        });
     }
 
 } 
