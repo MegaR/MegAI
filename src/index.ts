@@ -2,7 +2,6 @@ import "dotenv/config";
 import {
     ApplicationCommandType,
     AttachmentBuilder,
-    ChatInputCommandInteraction,
     Client,
     EmbedBuilder,
     Events,
@@ -11,12 +10,10 @@ import {
     MessageContextMenuCommandInteraction,
     Partials,
     Routes,
-    SlashCommandBuilder,
 } from "discord.js";
 import { MegAI } from "./megai";
 import { Session } from "./session.interface";
 import { DateTime } from "luxon";
-import { tts } from "./tts";
 import { getLogger } from "./logger";
 import { handleAdventureReactions, startAdventureCommand } from "./commands/adventure.command";
 import { instructCommand } from "./commands/instruct.command";
@@ -105,6 +102,8 @@ async function start() {
 
         try {
             const user = message.author.username;
+            const userId = message.author.id;
+            const channelId = message.channel.id;
             const prompt = formatPrompt(user, message);
             let images: Blob[] = [];
             for (const attachment of message.attachments) {
@@ -112,7 +111,7 @@ async function start() {
                 images.push(image);
             }
             log.debug(prompt);
-            await megAI.reply(message.author.id, prompt, images, async (s) => {
+            await megAI.reply(channelId, userId, prompt, images, async (s) => {
                 await updateMessage(reply, s);
             });
             // if (session) {

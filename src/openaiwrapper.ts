@@ -2,12 +2,103 @@ import OpenAI from "openai";
 import Lock from "./lock";
 import { ChatCompletionCreateParamsNonStreaming, ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { getLogger } from "./logger";
+import { MessageCreateParams } from "openai/resources/beta/threads/messages/messages";
+import { RunSubmitToolOutputsParams } from "openai/resources/beta/threads/runs/runs";
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API,
 });
 const lock = new Lock();
 const logger = getLogger('openai');
+
+async function createThread() {
+    await lock.acquire();
+    try {
+        const thread = await openai.beta.threads.create();
+        return thread.id;
+    } finally {
+        lock.release();
+    }
+}
+
+async function addMessage(threadId: string, message: MessageCreateParams) {
+    await lock.acquire();
+    try {
+        await openai.beta.threads.messages.create(threadId, message);
+    } finally {
+        lock.release();
+    }
+}
+
+async function assistantCompletion(threadId: string, instructions: string | undefined) {
+    await lock.acquire();
+    try {
+        const run = await openai.beta.threads.runs.create(
+            threadId,
+            {
+                assistant_id: process.env.OPENAI_ASSISTANT!,
+                instructions,
+            }
+        );
+
+        return run;
+    } finally {
+        lock.release();
+    }
+}
+
+async function runStatus(threadId: string, runId: string) {
+    await lock.acquire();
+    try {
+        const run = await openai.beta.threads.runs.retrieve(threadId, runId);
+        return run;
+    } finally {
+        lock.release();
+    }
+}
+
+async function cancelRun(threadId: string, runId: string) {
+    await lock.acquire();
+    try {
+        await openai.beta.threads.runs.cancel(threadId, runId);
+    } finally {
+        lock.release();
+    }
+}
+
+async function submitToolOutputs(threadId: string, runId: string, toolOutputs: Array<RunSubmitToolOutputsParams.ToolOutput>) {
+    await lock.acquire();
+    try {
+        const run = await openai.beta.threads.runs.submitToolOutputs(
+            threadId,
+            runId,
+            {
+                tool_outputs: toolOutputs,
+            }
+        );
+        return run;
+    } finally {
+        lock.release();
+    }
+}
+
+async function getMessages(threadId: string) {
+    await lock.acquire();
+    try {
+        const messages = await openai.beta.threads.messages.list(threadId);
+        return messages.data;
+    } finally {
+        lock.release();
+    }
+}
+ async function retrieveFile(fileId: string) {
+    await lock.acquire();
+    try {
+        return await (await openai.files.content(fileId)).arrayBuffer();
+    } finally {
+        lock.release();
+    }
+} 
 
 async function chatCompletion(
     messages: ChatCompletionMessageParam[],
@@ -74,4 +165,4 @@ async function dalle(prompt: string) {
     }
 }
 
-export const ai = { chatCompletion, embedding, instruct, dalle };
+export const ai = { chatCompletion, embedding, instruct, dalle, createThread, addMessage, assistantCompletion, runStatus, submitToolOutputs, getMessages, cancelRun, retrieveFile };
