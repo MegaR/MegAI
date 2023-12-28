@@ -12,6 +12,7 @@ import browserTool from "./tools/browser.tool";
 import googlePlacesTool from "./tools/google-places.tool";
 import { MessageCreateParams } from "openai/resources/beta/threads/messages/messages";
 import { sleep } from "openai/core";
+import { AssistantUpdateParams } from "openai/resources/beta/assistants/assistants";
 
 const personality: ChatCompletionSystemMessageParam = {
     role: "system",
@@ -31,7 +32,7 @@ export class MegAI {
         googleImagesTool,
         googlePlacesTool,
         wikipediaTool,
-        mathTool,
+        // mathTool,
         // stableHordeTool,
         dalleTool,
         browserTool,
@@ -46,6 +47,15 @@ export class MegAI {
             "BOTNAME",
             this.botName
         );
+        const definitions: Array<
+            | AssistantUpdateParams.AssistantToolsCode
+            | AssistantUpdateParams.AssistantToolsRetrieval
+            | AssistantUpdateParams.AssistantToolsFunction
+        > = this.tools.map(t => ({ type: 'function', function: t.definition }));
+        definitions.push({ type: 'code_interpreter' });
+        ai.updateAssistant({
+            tools: definitions,
+        });
     }
 
     async reply(
@@ -169,52 +179,4 @@ export class MegAI {
     private findTool(toolId: string): Tool | undefined {
         return this.tools.find(tool => tool.definition.name === toolId);
     }
-
-    // private async handleToolCall(
-    //     aiMessage: ChatCompletionAssistantMessageParam,
-    //     session: Session,
-    //     update: updateCallback
-    // ): Promise<ChatCompletionToolMessageParam[]> {
-    //     const responses: ChatCompletionToolMessageParam[] = [];
-    //
-    //     for (const toolCall of aiMessage.tool_calls!) {
-    //         try {
-    //             this.log.debug('tool call:', toolCall.function.name);
-    //             const tool = this.tools.find(
-    //                 (tool) => tool.definition.name === toolCall.function.name
-    //             );
-    //             if (!tool) {
-    //                 this.log.warn(`❌ unknown tool ${toolCall.function.name}`);
-    //                 responses.push({
-    //                     role: "tool",
-    //                     tool_call_id: toolcall.function.name,
-    //                     content: `Unknown function ${toolCall.function.name}`,
-    //                 });
-    //                 continue;
-    //             }
-    //             const parameters = JSON.parse(toolCall.function.arguments);
-    //             session.footer.push(
-    //                 `🔧 ${toolCall.function.name}: ${JSON.stringify(parameters)}`
-    //             );
-    //             await update(session);
-    //             const toolOutput = await tool.execute(parameters, session, this);
-    //             this.log.debug('Tool output: ', toolOutput);
-    //             await update(session);
-    //             responses.push({
-    //                 role: "tool",
-    //                 tool_call_id: toolcall.function.name,
-    //                 content: toolOutput,
-    //             });
-    //         } catch (e: any) {
-    //             this.log.error(e);
-    //             responses.push({
-    //                 role: "tool",
-    //                 tool_call_id: toolcall.function.name,
-    //                 content: `Error: ${e.toString()}`,
-    //             });
-    //         }
-    //
-    //     }
-    //     return responses;
-    // }
 }

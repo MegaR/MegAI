@@ -4,6 +4,7 @@ import { ChatCompletionCreateParamsNonStreaming, ChatCompletionMessageParam } fr
 import { getLogger } from "./logger";
 import { MessageCreateParams } from "openai/resources/beta/threads/messages/messages";
 import { RunSubmitToolOutputsParams } from "openai/resources/beta/threads/runs/runs";
+import { AssistantUpdateParams } from "openai/resources/beta/assistants/assistants";
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API,
@@ -11,6 +12,14 @@ const openai = new OpenAI({
 const lock = new Lock();
 const logger = getLogger('openai');
 
+async function updateAssistant(params: AssistantUpdateParams) {
+    await lock.acquire();
+    try {
+        await openai.beta.assistants.update(process.env.OPENAI_ASSISTANT!, params);
+    } finally {
+        lock.release();
+    }
+}
 async function createThread() {
     await lock.acquire();
     try {
@@ -91,14 +100,14 @@ async function getMessages(threadId: string) {
         lock.release();
     }
 }
- async function retrieveFile(fileId: string) {
+async function retrieveFile(fileId: string) {
     await lock.acquire();
     try {
         return await (await openai.files.content(fileId)).arrayBuffer();
     } finally {
         lock.release();
     }
-} 
+}
 
 async function chatCompletion(
     messages: ChatCompletionMessageParam[],
@@ -165,4 +174,4 @@ async function dalle(prompt: string) {
     }
 }
 
-export const ai = { chatCompletion, embedding, instruct, dalle, createThread, addMessage, assistantCompletion, runStatus, submitToolOutputs, getMessages, cancelRun, retrieveFile };
+export const ai = { chatCompletion, embedding, instruct, dalle, updateAssistant, createThread, addMessage, assistantCompletion, runStatus, submitToolOutputs, getMessages, cancelRun, retrieveFile };
