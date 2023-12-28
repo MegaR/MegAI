@@ -13,6 +13,7 @@ import googlePlacesTool from "./tools/google-places.tool";
 import { MessageCreateParams } from "openai/resources/beta/threads/messages/messages";
 import { sleep } from "openai/core";
 import { AssistantUpdateParams } from "openai/resources/beta/assistants/assistants";
+import { log } from "console";
 
 const personality: ChatCompletionSystemMessageParam = {
     role: "system",
@@ -160,14 +161,22 @@ export class MegAI {
                         `🔧 ${call.function.name}: ${JSON.stringify(call.function.arguments)}`
                     );
                     await update(session);
-                    const toolOutput = await tool.execute(JSON.parse(call.function.arguments), session, this);
-                    this.log.debug('tool output: ', toolOutput);
-                    await update(session);
+                    try {
+                        const toolOutput = await tool.execute(JSON.parse(call.function.arguments), session, this);
+                        this.log.debug('tool output: ', toolOutput);
+                        await update(session);
 
-                    toolOutputs.push({
-                        tool_call_id: call.id,
-                        output: toolOutput,
-                    })
+                        toolOutputs.push({
+                            tool_call_id: call.id,
+                            output: toolOutput,
+                        });
+                    } catch (error) {
+                        this.log.warn(`[${call.function.name}] ${error}`);
+                        toolOutputs.push({
+                            tool_call_id: call.id,
+                            output: `Error: ${error}`,
+                        });
+                    }
                 }
                 await ai.submitToolOutputs(threadId, runId, toolOutputs);
                 return await this.handleRun(threadId, runId, session, update);
