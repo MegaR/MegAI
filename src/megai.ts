@@ -15,6 +15,7 @@ import { sleep } from "openai/core";
 import { AssistantUpdateParams } from "openai/resources/beta/assistants/assistants";
 import { log } from "console";
 import Lock from "./lock";
+import { RequiredActionFunctionToolCall, RunSubmitToolOutputsParams } from "openai/resources/beta/threads/runs/runs";
 
 const personality: ChatCompletionSystemMessageParam = {
     role: "system",
@@ -25,7 +26,7 @@ const personality: ChatCompletionSystemMessageParam = {
     ].join(" "),
 };
 
-type updateCallback = (session: Session) => Promise<void>;
+type UpdateCallback = (session: Session) => Promise<void>;
 
 type Thread = {
     threadId: string;
@@ -70,7 +71,7 @@ export class MegAI {
         userId: string,
         prompt: string,
         images: Blob[],
-        update: updateCallback
+        update: UpdateCallback
     ): Promise<Session> {
         const message: MessageCreateParams = {
             role: "user",
@@ -90,7 +91,7 @@ export class MegAI {
 
     private async chatCompletion(
         session: Session,
-        update: updateCallback,
+        update: UpdateCallback,
         message: MessageCreateParams,
     ): Promise<void> {
         const thread = await this.getThread(session.channelId);
@@ -109,6 +110,7 @@ export class MegAI {
             if (status !== 'completed') {
                 throw new Error(`Status ${status}`);
             }
+            await this.handleCodeInterpreter(threadId, run.id, session, update);
             const messages = await ai.getMessages(threadId);
             const result = messages[0];
             for (const content of result.content) {
@@ -127,7 +129,7 @@ export class MegAI {
         }
     }
 
-    private async handleRun(threadId: string, runId: string, session: Session, update: updateCallback): Promise<
+    private async handleRun(threadId: string, runId: string, session: Session, update: UpdateCallback): Promise<
         'queued'
         | 'in_progress'
         | 'requires_action'
@@ -140,52 +142,80 @@ export class MegAI {
         do {
             await sleep(1000);
             status = await ai.runStatus(threadId, runId);
+
+            //handle tool calls
             if (status.status === 'requires_action' && status.required_action?.type === 'submit_tool_outputs') {
                 const toolCalls = status.required_action.submit_tool_outputs.tool_calls;
-                const toolOutputs = [];
+                const toolOutputs: RunSubmitToolOutputsParams.ToolOutput[] = [];
                 for (const call of toolCalls) {
-                    const tool = this.findTool(call.function.name);
-                    if (!tool) {
-                        this.log.warn(`❌ Tool ${call.function.name} not found`);
-                        throw new Error(`Unknown tool ${call.function.name}`);
-                    }
-
-                    if (tool.adminOnly && session.userId !== process.env.ADMIN) {
-                        this.log.warn(`tool ${tool.definition.name} is admin only`);
-                        toolOutputs.push({
-                            tool_call_id: call.id,
-                            output: 'This function call is not allowed for this user',
-                        });
-                        continue;
-                    }
-
-                    this.log.debug('tool call:', call.function.name);
-                    session.footer.push(
-                        `🔧 ${call.function.name}: ${JSON.stringify(call.function.arguments)}`
-                    );
-                    await update(session);
-                    try {
-                        const toolOutput = await tool.execute(JSON.parse(call.function.arguments), session, this);
-                        this.log.debug('tool output: ', toolOutput);
-                        await update(session);
-
-                        toolOutputs.push({
-                            tool_call_id: call.id,
-                            output: toolOutput,
-                        });
-                    } catch (error) {
-                        this.log.warn(`[${call.function.name}] ${error}`);
-                        toolOutputs.push({
-                            tool_call_id: call.id,
-                            output: `Error: ${error}`,
-                        });
-                    }
+                    toolOutputs.push(await this.handleToolCall(call, session, update));
                 }
                 await ai.submitToolOutputs(threadId, runId, toolOutputs);
                 return await this.handleRun(threadId, runId, session, update);
             }
+
         } while (status.status === "in_progress");
+
         return status.status;
+    }
+
+    async handleToolCall(call: RequiredActionFunctionToolCall, session: Session, update: UpdateCallback): Promise<RunSubmitToolOutputsParams.ToolOutput> {
+        const tool = this.findTool(call.function.name);
+        // Tool not found
+        if (!tool) {
+            this.log.warn(`❌ Tool ${call.function.name} not found`);
+            throw new Error(`Unknown tool ${call.function.name}`);
+        }
+
+        // Admin only tool
+        if (tool.adminOnly && session.userId !== process.env.ADMIN) {
+            this.log.warn(`tool ${tool.definition.name} is admin only`);
+            return {
+                tool_call_id: call.id,
+                output: 'This function call is not allowed for this user',
+            };
+        }
+
+        // Add tool call to footer
+        this.log.debug('tool call:', call.function.name);
+        session.footer.push(
+            `🔧 ${call.function.name}: ${JSON.stringify(call.function.arguments)}`
+        );
+        await update(session);
+
+        // Execute the tool
+        try {
+            const toolOutput = await tool.execute(JSON.parse(call.function.arguments), session, this);
+            this.log.debug('tool output: ', toolOutput);
+            await update(session);
+            return {
+                tool_call_id: call.id,
+                output: toolOutput,
+            };
+        } catch (error) {
+            this.log.warn(`[${call.function.name}] ${error}`);
+            return {
+                tool_call_id: call.id,
+                output: `Error: ${error}`,
+            };
+        }
+    }
+
+    private async handleCodeInterpreter(threadId: string, runId: string, session: Session, update: UpdateCallback) {
+        const steps = await ai.getRunSteps(threadId, runId);
+        for (const step of steps) {
+            if (step.step_details.type !== 'tool_calls') {
+                continue;
+            }
+
+            for (const call of step.step_details.tool_calls) {
+                if (call.type !== 'code_interpreter') {
+                    continue;
+                }
+                session.attachments.push({ name: 'code.txt', file: Buffer.from(call.code_interpreter.input) });
+                session.attachments.push({ name: 'code_output.txt', file: Buffer.from(JSON.stringify(call.code_interpreter.outputs, null, 2)) });
+            }
+        }
     }
 
     private findTool(toolId: string): Tool | undefined {

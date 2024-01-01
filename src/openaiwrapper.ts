@@ -56,7 +56,7 @@ async function assistantCompletion(threadId: string, instructions: string | unde
     }
 }
 
-async function runStatus(threadId: string, runId: string) {
+async function getRun(threadId: string, runId: string) {
     await lock.acquire();
     try {
         const run = await openai.beta.threads.runs.retrieve(threadId, runId);
@@ -104,6 +104,15 @@ async function retrieveFile(fileId: string) {
     await lock.acquire();
     try {
         return await (await openai.files.content(fileId)).arrayBuffer();
+    } finally {
+        lock.release();
+    }
+}
+
+async function getRunSteps(threadId: string, runId: string) {
+    await lock.acquire();
+    try {
+        return (await openai.beta.threads.runs.steps.list(threadId, runId)).data;
     } finally {
         lock.release();
     }
@@ -174,4 +183,19 @@ async function dalle(prompt: string) {
     }
 }
 
-export const ai = { chatCompletion, embedding, instruct, dalle, updateAssistant, createThread, addMessage, assistantCompletion, runStatus, submitToolOutputs, getMessages, cancelRun, retrieveFile };
+export const ai = {
+    chatCompletion,
+    embedding,
+    instruct,
+    dalle,
+    updateAssistant,
+    createThread,
+    addMessage,
+    assistantCompletion,
+    runStatus: getRun,
+    submitToolOutputs,
+    getMessages,
+    cancelRun,
+    retrieveFile,
+    getRunSteps,
+};
