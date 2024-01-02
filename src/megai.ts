@@ -70,23 +70,36 @@ export class MegAI {
         channelId: string,
         userId: string,
         prompt: string,
-        attachments: Blob[],
+        attachments: ArrayBuffer[],
         update: UpdateCallback
     ): Promise<Session> {
-        const message: MessageCreateParams = {
-            role: "user",
-            content: prompt,
-        };
+        const files: string[] = [];
+        try {
+            for (const attachment of attachments) {
+                const fileId = await ai.createFile(attachment);
+                files.push(fileId);
+            }
 
-        const session: Session = {
-            channelId,
-            userId,
-            responses: [],
-            attachments: [],
-            footer: [],
-        };
-        await this.chatCompletion(session, update, message);
-        return session;
+            const message: MessageCreateParams = {
+                role: "user",
+                content: prompt,
+                file_ids: files,
+            };
+
+            const session: Session = {
+                channelId,
+                userId,
+                responses: [],
+                attachments: [],
+                footer: [],
+            };
+            await this.chatCompletion(session, update, message);
+            return session;
+        } finally {
+            for (const file of files) {
+                await ai.deleteFile(file);
+            }
+        }
     }
 
     private async chatCompletion(

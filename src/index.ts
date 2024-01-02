@@ -105,9 +105,9 @@ async function start() {
             const userId = message.author.id;
             const channelId = message.channel.id;
             const prompt = formatPrompt(user, message);
-            let attachments: Blob[] = [];
+            let attachments: ArrayBuffer[] = [];
             for (const attachment of message.attachments) {
-                const image = await (await fetch(attachment[1].url)).blob();
+                const image = await (await fetch(attachment[1].url)).arrayBuffer();
                 attachments.push(image);
             }
             log.debug(prompt);

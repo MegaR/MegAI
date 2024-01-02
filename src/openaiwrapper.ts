@@ -5,6 +5,7 @@ import { getLogger } from "./logger";
 import { MessageCreateParams } from "openai/resources/beta/threads/messages/messages";
 import { RunSubmitToolOutputsParams } from "openai/resources/beta/threads/runs/runs";
 import { AssistantUpdateParams } from "openai/resources/beta/assistants/assistants";
+import { Uploadable, toFile } from "openai/uploads";
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API,
@@ -100,6 +101,29 @@ async function getMessages(threadId: string, after?: string) {
         lock.release();
     }
 }
+
+async function createFile(file: ArrayBuffer) {
+    await lock.acquire();
+    try {
+        const result = await openai.files.create({
+            file: await toFile(file),
+            purpose: 'assistants',
+        });
+        return result.id;
+    } finally {
+        lock.release();
+    }
+}
+
+async function deleteFile(fileId: string) {
+    await lock.acquire();
+    try {
+        await openai.files.del(fileId);
+    } finally {
+        lock.release();
+    }
+}
+
 async function retrieveFile(fileId: string) {
     await lock.acquire();
     try {
@@ -196,6 +220,8 @@ export const ai = {
     submitToolOutputs,
     getMessages,
     cancelRun,
+    createFile,
+    deleteFile,
     retrieveFile,
     getRunSteps,
 };
