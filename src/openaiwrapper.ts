@@ -192,7 +192,7 @@ export const ai = {
     createThread,
     addMessage,
     assistantCompletion,
-    runStatus: getRun,
+    getRun,
     submitToolOutputs,
     getMessages,
     cancelRun,

@@ -141,7 +141,7 @@ export class MegAI {
         let status;
         do {
             await sleep(1000);
-            status = await ai.runStatus(threadId, runId);
+            status = await ai.getRun(threadId, runId);
 
             //handle tool calls
             if (status.status === 'requires_action' && status.required_action?.type === 'submit_tool_outputs') {
@@ -201,7 +201,7 @@ export class MegAI {
         }
     }
 
-    private async handleCodeInterpreter(threadId: string, runId: string, session: Session, update: UpdateCallback) {
+    private async handleCodeInterpreter(threadId: string, runId: string, session: Session) {
         const steps = await ai.getRunSteps(threadId, runId);
         for (const step of steps) {
             if (step.step_details.type !== 'tool_calls') {
