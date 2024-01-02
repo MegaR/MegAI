@@ -33,7 +33,7 @@ async function createThread() {
 async function addMessage(threadId: string, message: MessageCreateParams) {
     await lock.acquire();
     try {
-        await openai.beta.threads.messages.create(threadId, message);
+        return await openai.beta.threads.messages.create(threadId, message);
     } finally {
         lock.release();
     }
@@ -91,10 +91,10 @@ async function submitToolOutputs(threadId: string, runId: string, toolOutputs: A
     }
 }
 
-async function getMessages(threadId: string) {
+async function getMessages(threadId: string, after?: string) {
     await lock.acquire();
     try {
-        const messages = await openai.beta.threads.messages.list(threadId);
+        const messages = await openai.beta.threads.messages.list(threadId, { after, order: 'asc' });
         return messages.data;
     } finally {
         lock.release();

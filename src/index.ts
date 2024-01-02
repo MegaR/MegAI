@@ -105,13 +105,13 @@ async function start() {
             const userId = message.author.id;
             const channelId = message.channel.id;
             const prompt = formatPrompt(user, message);
-            let images: Blob[] = [];
+            let attachments: Blob[] = [];
             for (const attachment of message.attachments) {
                 const image = await (await fetch(attachment[1].url)).blob();
-                images.push(image);
+                attachments.push(image);
             }
             log.debug(prompt);
-            await megAI.reply(channelId, userId, prompt, images, async (s) => {
+            await megAI.reply(channelId, userId, prompt, attachments, async (s) => {
                 await updateMessage(reply, s);
             });
             // if (session) {

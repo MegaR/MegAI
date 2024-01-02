@@ -70,7 +70,7 @@ export class MegAI {
         channelId: string,
         userId: string,
         prompt: string,
-        images: Blob[],
+        attachments: Blob[],
         update: UpdateCallback
     ): Promise<Session> {
         const message: MessageCreateParams = {
@@ -98,7 +98,7 @@ export class MegAI {
         await thread.lock.acquire();
         try {
             let threadId = thread.threadId;
-            await ai.addMessage(threadId, message);
+            const messageId = (await ai.addMessage(threadId, message)).id;
             const run = await ai.assistantCompletion(threadId, personality.content);
             let status;
             try {
@@ -110,17 +110,18 @@ export class MegAI {
             if (status !== 'completed') {
                 throw new Error(`Status ${status}`);
             }
-            await this.handleCodeInterpreter(threadId, run.id, session, update);
-            const messages = await ai.getMessages(threadId);
-            const result = messages[0];
-            for (const content of result.content) {
-                if (content.type === 'text') {
-                    session.responses.push(content.text.value);
-                    this.log.debug(`[${this.botName}] ${content.text.value}`)
-                } else {
-                    const file = await ai.retrieveFile(content.image_file.file_id);
-                    const data = Buffer.from(file);
-                    session.attachments.push({ name: 'image.png', file: data })
+            await this.handleCodeInterpreter(threadId, run.id, session);
+            const messages = await ai.getMessages(threadId, messageId);
+            for (const result of messages) {
+                for (const content of result.content) {
+                    if (content.type === 'text') {
+                        session.responses.push(content.text.value);
+                        this.log.debug(`[${this.botName}] ${content.text.value}`)
+                    } else {
+                        const file = await ai.retrieveFile(content.image_file.file_id);
+                        const data = Buffer.from(file);
+                        session.attachments.push({ name: 'image.png', file: data })
+                    }
                 }
             }
             update(session);
