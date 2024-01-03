@@ -19,13 +19,21 @@ import { handleAdventureReactions, startAdventureCommand } from "./commands/adve
 import { instructCommand } from "./commands/instruct.command";
 import { summaryCommand } from "./commands/summary.command";
 import { dalleCommand } from "./commands/dalle.command";
+import clearCommand from "./commands/clear.command";
 
 const log = getLogger("main");
 
 async function start() {
     const client = await setupDiscord();
-    await setupCommands();
     const megAI = new MegAI(client.user?.username!);
+    const commands = [
+        startAdventureCommand,
+        instructCommand,
+        summaryCommand,
+        dalleCommand,
+        new clearCommand(megAI),
+    ];
+    await setupCommands();
     client.on(Events.MessageCreate, async (message) => {
         // if (message.author.bot) return;
         if (message.author.id === client.user?.id) return;
@@ -46,21 +54,14 @@ async function start() {
             if (!interaction.isMessageContextMenuCommand()) return;
             handleReplyCommand(interaction);
         }
-        if (interaction.commandName === "startadventure") {
-            if (!interaction.isChatInputCommand()) return;
-            startAdventureCommand.handleCommand(client, interaction);
-        }
-        if (interaction.commandName === "instruct") {
-            if (!interaction.isChatInputCommand()) return;
-            instructCommand.handleCommand(client, interaction);
-        }
-        if (interaction.commandName === "summary") {
-            if (!interaction.isChatInputCommand()) return;
-            summaryCommand.handleCommand(client, interaction);
-        }
-        if (interaction.commandName === "image") {
-            if(!interaction.isChatInputCommand()) return;
-            dalleCommand.handleCommand(client, interaction);
+        for (const command of commands) {
+            if (command.definition.name !== interaction.commandName) {
+                continue;
+            }
+            if (!interaction.isChatInputCommand()) {
+                continue;
+            }
+            command.handleCommand(client, interaction);
         }
     });
 
@@ -109,7 +110,7 @@ async function start() {
             for (const attachment of message.attachments) {
                 const data = await (await fetch(attachment[1].url)).arrayBuffer();
                 const name = attachment[1].name;
-                attachments.push({name, data});
+                attachments.push({ name, data });
             }
             log.debug(prompt);
             await megAI.reply(channelId, userId, prompt, attachments, async (s) => {
@@ -164,10 +165,7 @@ async function start() {
             {
                 body: [
                     replyCommand,
-                    startAdventureCommand.definition,
-                    instructCommand.definition,
-                    summaryCommand.definition,
-                    dalleCommand.definition,
+                    ...commands.map(c => c.definition),
                 ],
             }
         );
@@ -198,6 +196,6 @@ async function start() {
         );
     }
 
-} 
+}
 
 start();

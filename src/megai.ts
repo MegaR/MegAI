@@ -102,6 +102,10 @@ export class MegAI {
         // }
     }
 
+    public clearThread(channelId: string) {
+        this.threadMap.delete(channelId);
+    }
+
     private async chatCompletion(
         session: Session,
         update: UpdateCallback,
