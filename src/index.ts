@@ -105,10 +105,11 @@ async function start() {
             const userId = message.author.id;
             const channelId = message.channel.id;
             const prompt = formatPrompt(user, message);
-            let attachments: ArrayBuffer[] = [];
+            let attachments = [];
             for (const attachment of message.attachments) {
-                const image = await (await fetch(attachment[1].url)).arrayBuffer();
-                attachments.push(image);
+                const data = await (await fetch(attachment[1].url)).arrayBuffer();
+                const name = attachment[1].name;
+                attachments.push({name, data});
             }
             log.debug(prompt);
             await megAI.reply(channelId, userId, prompt, attachments, async (s) => {

@@ -5,7 +5,7 @@ import { getLogger } from "./logger";
 import { MessageCreateParams } from "openai/resources/beta/threads/messages/messages";
 import { RunSubmitToolOutputsParams } from "openai/resources/beta/threads/runs/runs";
 import { AssistantUpdateParams } from "openai/resources/beta/assistants/assistants";
-import { Uploadable, toFile } from "openai/uploads";
+import { toFile } from "openai/uploads";
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API,
@@ -102,11 +102,11 @@ async function getMessages(threadId: string, after?: string) {
     }
 }
 
-async function createFile(file: ArrayBuffer) {
+async function createFile(file: ArrayBuffer, name: string) {
     await lock.acquire();
     try {
         const result = await openai.files.create({
-            file: await toFile(file),
+            file: await toFile(file, name),
             purpose: 'assistants',
         });
         return result.id;

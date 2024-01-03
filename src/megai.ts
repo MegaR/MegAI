@@ -70,13 +70,13 @@ export class MegAI {
         channelId: string,
         userId: string,
         prompt: string,
-        attachments: ArrayBuffer[],
+        attachments: {name: string, data: ArrayBuffer}[],
         update: UpdateCallback
     ): Promise<Session> {
         const files: string[] = [];
-        try {
+        // try {
             for (const attachment of attachments) {
-                const fileId = await ai.createFile(attachment);
+                const fileId = await ai.createFile(attachment.data, attachment.name);
                 files.push(fileId);
             }
 
@@ -95,11 +95,11 @@ export class MegAI {
             };
             await this.chatCompletion(session, update, message);
             return session;
-        } finally {
-            for (const file of files) {
-                await ai.deleteFile(file);
-            }
-        }
+        // } finally {
+        //     for (const file of files) {
+        //         await ai.deleteFile(file);
+        //     }
+        // }
     }
 
     private async chatCompletion(
@@ -227,7 +227,7 @@ export class MegAI {
                     continue;
                 }
                 session.attachments.push({ name: 'code.txt', file: Buffer.from(call.code_interpreter.input) });
-                session.attachments.push({ name: 'code_output.txt', file: Buffer.from(JSON.stringify(call.code_interpreter.outputs, null, 2)) });
+                // session.attachments.push({ name: 'code_output.txt', file: Buffer.from(JSON.stringify(call.code_interpreter.outputs, null, 2)) });
             }
         }
     }
