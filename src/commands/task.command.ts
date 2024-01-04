@@ -85,7 +85,7 @@ async function handleAssistantA(task: string, threadId: string, messages: Messag
         lastMessage = await ai.addMessage(threadId, message);
     }
     // const run = await ai.assistantCompletion(threadId, `You are a task doing AI. Take a breath and think step-by-step. Your task: '${task}'`, process.env.OPENAI_TASKAI_A);
-    const run = await ai.assistantCompletion(threadId, `You are a task doing AI. Your task: '${task}'`, process.env.OPENAI_TASKAI_A);
+    const run = await ai.assistantCompletion(threadId, `You are a task doing AI. Do the task and always apply all feedback. Your task: '${task}'`, process.env.OPENAI_TASKAI_A);
     const status = await handleRun(threadId, run.id);
     if (status !== 'completed') {
         throw new Error(`Incorrect status ${status}`);
