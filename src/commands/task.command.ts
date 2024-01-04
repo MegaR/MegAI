@@ -118,6 +118,7 @@ async function updateThread(thread: ThreadChannel, messages: ThreadMessage[], co
                 continue;
             }
             log.debug(content.text.value);
+            if(!content.text.value || content.text.value.length === 0) continue;
             await thread.send({ embeds: [new EmbedBuilder().setDescription(content.text.value).setColor(color)] });
         }
     }
