@@ -64,7 +64,7 @@ async function startTask(task: string, criteria: string, thread: ThreadChannel) 
 
     let newMessages: MessageCreateParams[] = [{ role: 'user', content: 'Start task' }];
     for (let i = 0; i < 10; i++) {
-        let results: ThreadMessage[] | true = await handleAssistantA(task, criteria, threadA, newMessages);
+        let results: ThreadMessage[] | true = await handleAssistantA(task, threadA, newMessages);
         await updateThread(thread, results, 'Green');
 
         newMessages = (results.flatMap(r => r.content).filter(c => c.type === 'text') as MessageContentText[]).map(c => ({role: 'user', content: c.text.value}));
@@ -79,12 +79,13 @@ async function startTask(task: string, criteria: string, thread: ThreadChannel) 
     thread.send('Task failed 😔');
 }
 
-async function handleAssistantA(task: string, _criteria: string, threadId: string, messages: MessageCreateParams[]) {
+async function handleAssistantA(task: string, threadId: string, messages: MessageCreateParams[]) {
     let lastMessage;
     for (const message of messages) {
         lastMessage = await ai.addMessage(threadId, message);
     }
-    const run = await ai.assistantCompletion(threadId, `You are a task doing AI. Take a breath and think step-by-step. Your task: '${task}'`, process.env.OPENAI_TASKAI_A);
+    // const run = await ai.assistantCompletion(threadId, `You are a task doing AI. Take a breath and think step-by-step. Your task: '${task}'`, process.env.OPENAI_TASKAI_A);
+    const run = await ai.assistantCompletion(threadId, `You are a task doing AI. Your task: '${task}'`, process.env.OPENAI_TASKAI_A);
     const status = await handleRun(threadId, run.id);
     if (status !== 'completed') {
         throw new Error(`Incorrect status ${status}`);
@@ -98,7 +99,7 @@ async function handleAssistantB(criteria: string, threadId: string, messages: Me
     for (const message of messages) {
         lastMessage = await ai.addMessage(threadId, message);
     }
-    const run = await ai.assistantCompletion(threadId, `You're a criticizing AI. Keep criticizing until the following criteria are met: '${criteria}'. If all criteria is met use the 'finished' tool. Only respond with detailed critique.`, process.env.OPENAI_TASKAI_B);
+    const run = await ai.assistantCompletion(threadId, `You're a criticizing AI. Keep criticizing until ALL of the following criteria are met: '${criteria}'. Only respond with detailed critique. Be very strict! If there's nothing more to critique use the finished tool.`, process.env.OPENAI_TASKAI_B);
     const status = await handleRun(threadId, run.id);
     if (status === true) {
         return true;
@@ -192,7 +193,7 @@ async function setupAssistants() {
         | AssistantUpdateParams.AssistantToolsRetrieval
         | AssistantUpdateParams.AssistantToolsFunction
     > = tools.map(t => ({ type: 'function', function: t.definition }));
-    definitions.push({ type: 'code_interpreter' });
+    // definitions.push({ type: 'code_interpreter' });
     ai.updateAssistant({
         tools: definitions,
     }, process.env.OPENAI_TASKAI_A);
@@ -203,14 +204,14 @@ async function setupAssistants() {
                 type: 'function',
                 function: {
                     name: 'finished',
-                    description: 'Use this function if all criteria are met',
+                    description: 'Use this function only if ALL criteria are met',
                     parameters: {
                         type: "object",
                         properties: {},
                         required: [],
                     }
                 }
-            }
+            },
         ],
     }, process.env.OPENAI_TASKAI_B);
 }
