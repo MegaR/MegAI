@@ -21,9 +21,11 @@ const pollinationsTool: Tool = {
             required: ["prompt"],
         },
     },
-    execute: async (parameters: any, session: Session) => {
+    execute: async (parameters: any, session?: Session) => {
         const stream = await pollinations(parameters.prompt);
-        session.attachments.push({file: stream, name: 'image.png'});
+        if (session) {
+            session.attachments.push({ file: stream, name: 'image.png' });
+        }
         return 'image.png attached';
     },
 };
@@ -33,7 +35,7 @@ export async function pollinations(prompt: string): Promise<string> {
     const encoded = encodeURI(prompt);
     const request = await axios.get(
         `https://image.pollinations.ai/prompt/${encoded}`,
-        {responseType: 'arraybuffer'}
+        { responseType: 'arraybuffer' }
     );
 
     return request.data;

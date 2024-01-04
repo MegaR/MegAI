@@ -17,7 +17,7 @@ const weatherTool: Tool = {
             required: ["location"],
         },
     },
-    execute: async (parameters: any, session: Session) => {
+    execute: async (parameters: any) => {
         const apiKey = process.env.OPENWEATHERMAP_API_KEY;
         const url = `https://api.openweathermap.org/data/2.5/weather?q=${parameters.location}&appid=${apiKey}`;
         const response = await axios.get(url);

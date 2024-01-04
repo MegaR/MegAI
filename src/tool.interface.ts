@@ -4,6 +4,6 @@ import { ChatCompletionCreateParams } from "openai/resources";
 
 export default interface Tool {
     definition: ChatCompletionCreateParams.Function;
-    execute: (parameters: any, session: Session, ai: MegAI) => Promise<string>;
+    execute: (parameters: any, session?: Session, ai?: MegAI) => Promise<string>;
     adminOnly?: true;
 }

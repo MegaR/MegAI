@@ -22,7 +22,7 @@ const googleTool: Tool = {
             cx: process.env.GOOGLE_CSE_ID,
             q: parameters.query,
         });
-        const resultsFormatted = results.data.items?.slice(0, 5).map((item) => {
+        const resultsFormatted = results.data.items?.map((item) => {
             return {
                 title: item.title,
                 link: item.link,

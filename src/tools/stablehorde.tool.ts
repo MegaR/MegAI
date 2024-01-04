@@ -49,7 +49,7 @@ const stableHordeTool: Tool = {
             required: ["prompt", "model"],
         },
     },
-    execute: async (parameters: any, session: Session) => {
+    execute: async (parameters: any, session?: Session) => {
         let model = models[0];
         if (parameters.prompt) {
             model =
@@ -60,7 +60,9 @@ const stableHordeTool: Tool = {
         log.debug(`StableHorde image id: ${id}`);
         const url = await waitForResult(id);
         const stream = await downloadImage(url);
-        session.attachments.push({file: stream, name: 'image.png'});
+        if (session) {
+            session.attachments.push({ file: stream, name: 'image.png' });
+        }
         return url;
     },
 };
@@ -112,7 +114,7 @@ async function sleep(time: number) {
 }
 
 async function downloadImage(url: string): Promise<any> {
-    const response = await axios.get(url, {responseType: 'arraybuffer'});
+    const response = await axios.get(url, { responseType: 'arraybuffer' });
     return response.data;
 }
 

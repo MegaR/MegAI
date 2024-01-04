@@ -13,10 +13,10 @@ const openai = new OpenAI({
 const lock = new Lock();
 const logger = getLogger('openai');
 
-async function updateAssistant(params: AssistantUpdateParams) {
+async function updateAssistant(params: AssistantUpdateParams, assistantId?: string) {
     await lock.acquire();
     try {
-        await openai.beta.assistants.update(process.env.OPENAI_ASSISTANT!, params);
+        await openai.beta.assistants.update(assistantId || process.env.OPENAI_ASSISTANT!, params);
     } finally {
         lock.release();
     }
@@ -40,13 +40,13 @@ async function addMessage(threadId: string, message: MessageCreateParams) {
     }
 }
 
-async function assistantCompletion(threadId: string, instructions: string | undefined) {
+async function assistantCompletion(threadId: string, instructions: string | undefined, assistantId?: string) {
     await lock.acquire();
     try {
         const run = await openai.beta.threads.runs.create(
             threadId,
             {
-                assistant_id: process.env.OPENAI_ASSISTANT!,
+                assistant_id: assistantId || process.env.OPENAI_ASSISTANT!,
                 instructions,
             }
         );

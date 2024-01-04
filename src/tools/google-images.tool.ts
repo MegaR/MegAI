@@ -18,7 +18,7 @@ const googleImagesTool: Tool = {
             required: ["query"],
         },
     },
-    execute: async (parameters: any, session: Session) => {
+    execute: async (parameters: any, session?: Session) => {
         const results = await customsearch("v1").cse.list({
             auth: process.env.GOOGLE_API_KEY,
             cx: process.env.GOOGLE_CSE_ID,
@@ -36,7 +36,9 @@ const googleImagesTool: Tool = {
 
         for(const result of resultsFormatted.filter(r => r.imageLink)) {
             const image = await downloadImage(result.imageLink!);
-            session.attachments.push({file: image, name: 'image.png'});
+            if(session) {
+                session.attachments.push({file: image, name: 'image.png'});
+            }
         }
 
         return JSON.stringify(resultsFormatted, null, 2);

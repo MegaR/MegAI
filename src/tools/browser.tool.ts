@@ -18,7 +18,7 @@ const browserTool: Tool = {
             required: ["url"],
         },
     },
-    execute: async (parameters: any, _session: Session) => {
+    execute: async (parameters: any) => {
         const browser = await puppeteer.connect({ browserWSEndpoint: process.env.BROWSERLESS_URL });
         try {
             const page = await browser.newPage();

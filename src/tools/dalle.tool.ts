@@ -3,8 +3,6 @@ import { Session } from "../session.interface";
 import { getLogger } from "../logger";
 import { ai } from "../openaiwrapper";
 
-const log = getLogger('dalle-tool');
-
 const dalleTool: Tool = {
     adminOnly: true,
     definition: {
@@ -22,10 +20,12 @@ const dalleTool: Tool = {
             required: ["prompt"],
         },
     },
-    execute: async (parameters: any, session: Session) => {
+    execute: async (parameters: any, session?: Session) => {
         const image = await ai.dalle(parameters.prompt);
         const data = Buffer.from(image, "base64");
-        session.attachments.push({ file: data, name: 'image.png' });
+        if (session) {
+            session.attachments.push({ file: data, name: 'image.png' });
+        }
         return 'Image is attached to response.';
     },
 };

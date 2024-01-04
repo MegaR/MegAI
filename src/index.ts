@@ -20,6 +20,7 @@ import { instructCommand } from "./commands/instruct.command";
 import { summaryCommand } from "./commands/summary.command";
 import { dalleCommand } from "./commands/dalle.command";
 import clearCommand from "./commands/clear.command";
+import { taskCommand } from "./commands/task.command";
 
 const log = getLogger("main");
 
@@ -31,6 +32,7 @@ async function start() {
         instructCommand,
         summaryCommand,
         dalleCommand,
+        taskCommand,
         new clearCommand(megAI),
     ];
     await setupCommands();

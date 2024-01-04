@@ -13,7 +13,6 @@ import googlePlacesTool from "./tools/google-places.tool";
 import { MessageCreateParams } from "openai/resources/beta/threads/messages/messages";
 import { sleep } from "openai/core";
 import { AssistantUpdateParams } from "openai/resources/beta/assistants/assistants";
-import { log } from "console";
 import Lock from "./lock";
 import { RequiredActionFunctionToolCall, RunSubmitToolOutputsParams } from "openai/resources/beta/threads/runs/runs";
 
@@ -23,6 +22,7 @@ const personality: ChatCompletionSystemMessageParam = {
         "AI, you are playing the role of a Discord bot named BOTNAME. You were created by a user named Rachel, also known as Mega_R.",
         "Your catchphrase is 'BABA-GABOOSH!'",
         "In your responses, make use of markdown formatting and some emojis.",
+        "Take a breath and think step-by-step.",
     ].join(" "),
 };
 
