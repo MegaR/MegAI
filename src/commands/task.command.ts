@@ -47,8 +47,8 @@ export const taskCommand: Command<ChatInputCommandInteraction> = {
         const reply = await interaction.reply({ embeds: [new EmbedBuilder().setTitle(`Task: ${task}`).setDescription(`*Criteria:* ${criteria}`)] });
         const threadChannel = await (await reply.fetch()).startThread({ name: `task: ${task}` });
         try {
-        await startTask(task, criteria, threadChannel);
-        } catch(e) {
+            await startTask(task, criteria, threadChannel);
+        } catch (e) {
             log.error(e);
             await threadChannel.send('❌ An error has occurred');
         }
@@ -67,14 +67,14 @@ async function startTask(task: string, criteria: string, thread: ThreadChannel) 
         let results: ThreadMessage[] | true = await handleAssistantA(task, threadA, newMessages);
         await updateThread(thread, results, 'Green');
 
-        newMessages = (results.flatMap(r => r.content).filter(c => c.type === 'text') as MessageContentText[]).map(c => ({role: 'user', content: c.text.value}));
+        newMessages = (results.flatMap(r => r.content).filter(c => c.type === 'text') as MessageContentText[]).map(c => ({ role: 'user', content: c.text.value }));
         results = await handleAssistantB(criteria, threadB, newMessages);
         if (results === true) {
             thread.send("Task finished 🏁");
             return;
         }
         await updateThread(thread, results, 'Yellow');
-        newMessages = (results.flatMap(r => r.content).filter(c => c.type === 'text') as MessageContentText[]).map(c => ({role: 'user', content: c.text.value}));
+        newMessages = (results.flatMap(r => r.content).filter(c => c.type === 'text') as MessageContentText[]).map(c => ({ role: 'user', content: c.text.value }));
     }
     thread.send('Task failed 😔');
 }
@@ -85,7 +85,7 @@ async function handleAssistantA(task: string, threadId: string, messages: Messag
         lastMessage = await ai.addMessage(threadId, message);
     }
     // const run = await ai.assistantCompletion(threadId, `You are a task doing AI. Take a breath and think step-by-step. Your task: '${task}'`, process.env.OPENAI_TASKAI_A);
-    const run = await ai.assistantCompletion(threadId, `You are a task doing AI. Do the task and always apply all feedback. Your task: '${task}'`, process.env.OPENAI_TASKAI_A);
+    const run = await ai.assistantCompletion(threadId, `You are a task doing AI. Do the task and always apply all feedback. Don't wait for feedback to get started. Take a breath and think step-by-step. Your task: '${task}'`, process.env.OPENAI_TASKAI_A);
     const status = await handleRun(threadId, run.id);
     if (status !== 'completed') {
         throw new Error(`Incorrect status ${status}`);
@@ -99,7 +99,7 @@ async function handleAssistantB(criteria: string, threadId: string, messages: Me
     for (const message of messages) {
         lastMessage = await ai.addMessage(threadId, message);
     }
-    const run = await ai.assistantCompletion(threadId, `You're a criticizing AI. Keep criticizing until ALL of the following criteria are met: '${criteria}'. Only respond with detailed critique. Be very strict! If there's nothing more to critique use the finished tool.`, process.env.OPENAI_TASKAI_B);
+    const run = await ai.assistantCompletion(threadId, `You're a feedback AI. Keep criticizing the user until ALL of the following criteria are met: '${criteria}'. Only respond with detailed feedback. Be very strict! Keep the user on task and responding with progress.`, process.env.OPENAI_TASKAI_B);
     const status = await handleRun(threadId, run.id);
     if (status === true) {
         return true;
@@ -118,7 +118,7 @@ async function updateThread(thread: ThreadChannel, messages: ThreadMessage[], co
                 continue;
             }
             log.debug(content.text.value);
-            if(!content.text.value || content.text.value.length === 0) continue;
+            if (!content.text.value || content.text.value.length === 0) continue;
             await thread.send({ embeds: [new EmbedBuilder().setDescription(content.text.value).setColor(color)] });
         }
     }
@@ -148,7 +148,11 @@ async function handleRun(threadId: string, runId: string): Promise<
             }
             const toolOutputs: RunSubmitToolOutputsParams.ToolOutput[] = [];
             for (const call of toolCalls) {
-                toolOutputs.push(await handleToolCall(call));
+                const retVal = await handleToolCall(call);
+                if(retVal.rating === 10) {
+                    return true;
+                }
+                toolOutputs.push(retVal.output);
             }
             log.debug('tool finished. Submitting results');
             await ai.submitToolOutputs(threadId, runId, toolOutputs);
@@ -160,15 +164,25 @@ async function handleRun(threadId: string, runId: string): Promise<
     return status.status;
 }
 
-async function handleToolCall(call: RequiredActionFunctionToolCall): Promise<RunSubmitToolOutputsParams.ToolOutput> {
+async function handleToolCall(call: RequiredActionFunctionToolCall): Promise<{ rating?: number, output: RunSubmitToolOutputsParams.ToolOutput }> {
+    if (call.function.name === 'rate') {
+        console.log(call.function.arguments);
+        const rating = JSON.parse(call.function.arguments)?.rating;
+        log.debug(`The ai gave the following rating: ${rating}`);
+        return {
+            rating: rating, output: { tool_call_id: call.id, output: 'Rating stored.' }
+        };
+    }
     const tool = tools.find(t => t.definition.name === call.function.name);
     // Tool not found
     if (!tool) {
         log.warn(`❌ Tool ${call.function.name} not found`);
         return {
-            tool_call_id: call.id,
-            output: `Tool ${call.function.name} not found!`,
-        }
+            output: {
+                tool_call_id: call.id,
+                output: `Tool ${call.function.name} not found!`,
+            }
+        };
     }
 
     // Execute the tool
@@ -176,14 +190,18 @@ async function handleToolCall(call: RequiredActionFunctionToolCall): Promise<Run
         log.debug(`Executing tool ${tool.definition.name} with parameters ${call.function.arguments}`);
         const toolOutput = await tool.execute(JSON.parse(call.function.arguments));
         return {
-            tool_call_id: call.id,
-            output: toolOutput,
+            output: {
+                tool_call_id: call.id,
+                output: toolOutput,
+            }
         };
     } catch (error) {
         log.warn(`[${call.function.name}] ${error}`);
         return {
-            tool_call_id: call.id,
-            output: `Error: ${error}`,
+            output: {
+                tool_call_id: call.id,
+                output: `Error: ${error}`,
+            }
         };
     }
 }
@@ -201,18 +219,36 @@ async function setupAssistants() {
 
     ai.updateAssistant({
         tools: [
+            // {
+            //     type: 'function',
+            //     function: {
+            //         name: 'finished',
+            //         description: 'Use this function only if ALL criteria are met',
+            //         parameters: {
+            //             type: "object",
+            //             properties: {},
+            //             required: [],
+            //         }
+            //     }
+            // },
             {
                 type: 'function',
                 function: {
-                    name: 'finished',
-                    description: 'Use this function only if ALL criteria are met',
+                    name: 'rate',
+                    description: 'Rating of the user\'s work from 1 to 10',
                     parameters: {
-                        type: "object",
-                        properties: {},
-                        required: [],
+                        type: 'object',
+                        properties: {
+                            rating: {
+                                type: 'number',
+                                description: 'Rating from 1 to 10.',
+                            }
+                        },
+                        required: ['rating'],
                     }
+
                 }
-            },
+            }
         ],
     }, process.env.OPENAI_TASKAI_B);
 }
