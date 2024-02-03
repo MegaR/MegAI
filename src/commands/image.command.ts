@@ -42,6 +42,7 @@ export const imageCommand: Command<ChatInputCommandInteraction> = {
                 ],
                 {
                     model: 'gpt-4-vision-preview',
+                    max_tokens: 250,
                 }
 
             );
@@ -49,7 +50,10 @@ export const imageCommand: Command<ChatInputCommandInteraction> = {
             const imageData = await (await fetch(attachment.url)).arrayBuffer();
             await reply.edit({
                 embeds: [
-                    new EmbedBuilder().setDescription(completion.content).setImage('attachment://image.png'),
+                    new EmbedBuilder()
+                        .setTitle(`Prompt: ${prompt}`)
+                        .setDescription(completion.content)
+                        .setImage('attachment://image.png'),
                 ],
                 files: [
                     new AttachmentBuilder(Buffer.from(imageData), {
