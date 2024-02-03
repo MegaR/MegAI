@@ -110,12 +110,7 @@ async function start() {
             const userId = message.author.id;
             const channelId = message.channel.id;
             const prompt = formatPrompt(user, message);
-            let attachments = [];
-            for (const attachment of message.attachments) {
-                const data = await (await fetch(attachment[1].url)).arrayBuffer();
-                const name = attachment[1].name;
-                attachments.push({ name, data });
-            }
+            const attachments = message.attachments.map(a => a.url);
             log.debug(prompt);
             await megAI.reply(channelId, userId, prompt, attachments, async (s) => {
                 await updateMessage(reply, s);

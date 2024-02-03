@@ -72,36 +72,35 @@ export class MegAI {
         channelId: string,
         userId: string,
         prompt: string,
-        attachments: {name: string, data: ArrayBuffer}[],
+        // attachments: {name: string, data: ArrayBuffer}[],
+        attachments: string[],
         update: UpdateCallback
     ): Promise<Session> {
         const files: string[] = [];
-        // try {
-            for (const attachment of attachments) {
-                const fileId = await ai.createFile(attachment.data, attachment.name);
-                files.push(fileId);
-            }
-
-            const message: MessageCreateParams = {
-                role: "user",
-                content: prompt,
-                file_ids: files,
-            };
-
-            const session: Session = {
-                channelId,
-                userId,
-                responses: [],
-                attachments: [],
-                footer: [],
-            };
-            await this.chatCompletion(session, update, message);
-            return session;
-        // } finally {
-        //     for (const file of files) {
-        //         await ai.deleteFile(file);
-        //     }
+        // for (const attachment of attachments) {
+        //     const fileId = await ai.createFile(attachment.data, attachment.name);
+        //     files.push(fileId);
         // }
+
+        if (attachments.length > 0) {
+            prompt = `attachments:\n${attachments.join('\n')}\n\nprompt`;
+        }
+
+        const message: MessageCreateParams = {
+            role: "user",
+            content: prompt,
+            file_ids: files,
+        };
+
+        const session: Session = {
+            channelId,
+            userId,
+            responses: [],
+            attachments: [],
+            footer: [],
+        };
+        await this.chatCompletion(session, update, message);
+        return session;
     }
 
     public clearThread(channelId: string) {
