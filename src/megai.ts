@@ -15,6 +15,7 @@ import { sleep } from "openai/core";
 import { AssistantUpdateParams } from "openai/resources/beta/assistants/assistants";
 import Lock from "./lock";
 import { RequiredActionFunctionToolCall, RunSubmitToolOutputsParams } from "openai/resources/beta/threads/runs/runs";
+import inspectImageTool from "./tools/inspect-image.tool";
 
 const personality: ChatCompletionSystemMessageParam = {
     role: "system",
@@ -47,6 +48,7 @@ export class MegAI {
         // sayTool,
         // weatherTool,
         // elevenLabsTool,
+        inspectImageTool,
     ];
     private threadMap = new Map<string, Thread>();
 
