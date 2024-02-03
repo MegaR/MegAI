@@ -26,29 +26,29 @@ const inspectImageTool: Tool = {
     },
     execute: async (parameters: any) => {
         try {
-        const url = parameters.url;
-        const prompt = parameters.prompt;
-        if (!url || !prompt) {
-            return 'Error: url and prompt are required';
-        }
+            const url = parameters.url;
+            const prompt = parameters.prompt;
+            if (!url || !prompt) {
+                return 'Error: url and prompt are required';
+            }
 
-        logger.debug('Inspecting image:', url, 'with prompt:', prompt);
-        const response = await ai.chatCompletion(
-            [
+            logger.debug('Inspecting image:', url, 'with prompt:', prompt);
+            const response = await ai.chatCompletion(
+                [
+                    {
+                        role: 'user', content: [
+                            { type: 'text', text: prompt },
+                            { type: 'image_url', image_url: { url, detail: 'low' } },
+                        ]
+                    }
+                ],
                 {
-                    role: 'user', content: [
-                        { type: 'text', text: prompt },
-                        { type: 'image_url', image_url: { url, detail: 'low' } },
-                    ]
-                }
-            ],
-            {
-                model: 'gpt-4-vision-preview',
-                max_tokens: 250,
-            },
-        );
-        logger.debug(`Inspecting image response: ${response.content}`);
-        return response.content!;
+                    model: 'gpt-4-vision-preview',
+                    max_tokens: 250,
+                },
+            );
+            logger.debug(`Inspecting image response: ${response.content}`);
+            return response.content!;
         } catch (error: any) {
             logger.error(error);
             return error.toString();
