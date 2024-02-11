@@ -15,7 +15,10 @@ import { MegAI } from "./megai";
 import { Session } from "./session.interface";
 import { DateTime } from "luxon";
 import { getLogger } from "./logger";
-import { handleAdventureReactions, startAdventureCommand } from "./commands/adventure.command";
+import {
+    handleAdventureReactions,
+    startAdventureCommand,
+} from "./commands/adventure.command";
 import { instructCommand } from "./commands/instruct.command";
 import { summaryCommand } from "./commands/summary.command";
 import { dalleCommand } from "./commands/dalle.command";
@@ -110,11 +113,17 @@ async function start() {
             const userId = message.author.id;
             const channelId = message.channel.id;
             const prompt = formatPrompt(user, message);
-            const attachments = message.attachments.map(a => a.url);
+            const attachments = message.attachments.map((a) => a.url);
             log.debug(prompt);
-            await megAI.reply(channelId, userId, prompt, attachments, async (s) => {
-                await updateMessage(reply, s);
-            });
+            await megAI.reply(
+                channelId,
+                userId,
+                prompt,
+                attachments,
+                async (s) => {
+                    await updateMessage(reply, s);
+                }
+            );
             // if (session) {
             //     const audio = await tts(session.responses.join("\n"));
             //     session.attachments.push({ file: audio, name: "tts.mp3" });
@@ -162,10 +171,7 @@ async function start() {
         await client.rest.put(
             Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!),
             {
-                body: [
-                    replyCommand,
-                    ...commands.map(c => c.definition),
-                ],
+                body: [replyCommand, ...commands.map((c) => c.definition)],
             }
         );
     }
@@ -194,7 +200,6 @@ async function start() {
             megAI
         );
     }
-
 }
 
 start();

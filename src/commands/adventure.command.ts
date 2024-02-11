@@ -2,10 +2,24 @@ import { ai } from "../openaiwrapper";
 import { getLogger } from "../logger";
 import Lock from "../lock";
 import Command from "./command.interface";
-import { AnyThreadChannel, AttachmentBuilder, ChatInputCommandInteraction, Client, EmbedBuilder, MessageReaction, PartialMessageReaction, SlashCommandBuilder, ThreadAutoArchiveDuration } from "discord.js";
+import {
+    AnyThreadChannel,
+    AttachmentBuilder,
+    ChatInputCommandInteraction,
+    Client,
+    EmbedBuilder,
+    MessageReaction,
+    PartialMessageReaction,
+    SlashCommandBuilder,
+    ThreadAutoArchiveDuration,
+} from "discord.js";
 import { tts } from "../tts";
 import { pollinations } from "../tools/pollinations.tool";
-import { ChatCompletionMessageParam, ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam } from "openai/resources";
+import {
+    ChatCompletionMessageParam,
+    ChatCompletionSystemMessageParam,
+    ChatCompletionUserMessageParam,
+} from "openai/resources";
 
 const adventureEmojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣"];
 
@@ -16,7 +30,10 @@ interface AdventureSession {
     threadId: string;
     theme: string;
     plan: ChatCompletionMessageParam;
-    messages: { message: ChatCompletionMessageParam, summary: ChatCompletionMessageParam}[];
+    messages: {
+        message: ChatCompletionMessageParam;
+        summary: ChatCompletionMessageParam;
+    }[];
     lastOptions: string[];
     lock: Lock;
 }
@@ -27,7 +44,10 @@ export interface AdventureResult {
 }
 
 function createSystemPrompt(theme: string): ChatCompletionSystemMessageParam {
-    return { role: 'system', content: `You are a Adventure AI. You describe the adventure and the user say what the main character does. The theme is ${theme}. Keep it interesting. Write out the dialogs. You can use markdown.` };
+    return {
+        role: "system",
+        content: `You are a Adventure AI. You describe the adventure and the user say what the main character does. The theme is ${theme}. Keep it interesting. Write out the dialogs. You can use markdown.`,
+    };
 }
 
 async function startAdventure(
@@ -37,7 +57,7 @@ async function startAdventure(
     const session: AdventureSession = {
         threadId,
         theme,
-        plan: { role: 'system', content: 'Current plan: none' },
+        plan: { role: "system", content: "Current plan: none" },
         messages: [],
         lastOptions: [],
         lock: new Lock(),
@@ -45,7 +65,8 @@ async function startAdventure(
 
     const plan = await updatePlan(session);
 
-    const systemPrompt: ChatCompletionSystemMessageParam = createSystemPrompt(theme);
+    const systemPrompt: ChatCompletionSystemMessageParam =
+        createSystemPrompt(theme);
     const completion = await ai.chatCompletion([
         systemPrompt,
         plan,
@@ -88,14 +109,14 @@ async function getOptions(session: AdventureSession): Promise<string[]> {
         [
             createSystemPrompt(session.theme),
             session.messages[0].summary,
-            ...session.messages.slice(1).map(m => m.message),
+            ...session.messages.slice(1).map((m) => m.message),
         ],
         {
             functions: [functionDef],
             function_call: {
                 name: "create_options",
-            }
-        },
+            },
+        }
     );
 
     if (!completion || !completion.function_call) throw new Error("No options");
@@ -104,7 +125,9 @@ async function getOptions(session: AdventureSession): Promise<string[]> {
     return parameters.options;
 }
 
-export async function handleAdventureReactions(reaction: MessageReaction | PartialMessageReaction) {
+export async function handleAdventureReactions(
+    reaction: MessageReaction | PartialMessageReaction
+) {
     if (reaction.partial) {
         await reaction.fetch();
     }
@@ -131,10 +154,11 @@ export async function handleAdventureReactions(reaction: MessageReaction | Parti
             createSystemPrompt(session.theme),
             session.plan,
             session.messages[0].summary,
-            ...session.messages.slice(1).map(m => m.message),
+            ...session.messages.slice(1).map((m) => m.message),
             optionMessage,
         ]);
-        if (!completion || !completion.content) throw new Error("No completion");
+        if (!completion || !completion.content)
+            throw new Error("No completion");
         const summary = await generateSummary(session, completion);
         session.messages.push({ message: completion, summary });
         session.messages = session.messages.slice(-10);
@@ -144,13 +168,15 @@ export async function handleAdventureReactions(reaction: MessageReaction | Parti
         const options = await getOptions(session);
         session.lastOptions = options;
 
-        await handleAdventureResult(channel, { message: completion.content, options: session.lastOptions });
+        await handleAdventureResult(channel, {
+            message: completion.content,
+            options: session.lastOptions,
+        });
     } catch (e) {
         log.error(e);
     } finally {
         session.lock.release();
     }
-
 }
 
 async function handleAdventureResult(
@@ -179,7 +205,7 @@ async function handleAdventureResult(
 
         const imagePrompt = await generateSceneDescription(result.message);
         const image = await pollinations(imagePrompt);
-        attachments.push(new AttachmentBuilder(image, { name: 'image.png' }));
+        attachments.push(new AttachmentBuilder(image, { name: "image.png" }));
         await message.edit({ embeds: [embed], files: attachments });
     } catch (e) {
         log.error(e);
@@ -203,35 +229,41 @@ async function generateSceneDescription(story: string) {
         },
     };
     const completion = await ai.chatCompletion(
-        [{
-            role: "system",
-            content: `Render an image to accompany the following text: ${story}`,
-        }],
+        [
+            {
+                role: "system",
+                content: `Render an image to accompany the following text: ${story}`,
+            },
+        ],
         {
             functions: [functionDef],
             function_call: {
                 name: "render_image",
-            }
-        },
+            },
+        }
     );
 
-    if (!completion || !completion.function_call) throw new Error("No image prompt");
+    if (!completion || !completion.function_call)
+        throw new Error("No image prompt");
 
     const parameters = JSON.parse(completion.function_call!.arguments!);
     return parameters.prompt;
 }
 
-async function generateSummary(session: AdventureSession, newMessage: ChatCompletionMessageParam): Promise<ChatCompletionMessageParam> {
+async function generateSummary(
+    session: AdventureSession,
+    newMessage: ChatCompletionMessageParam
+): Promise<ChatCompletionMessageParam> {
     const functionDef = {
         name: "submit_summary",
-        description: "Save a summary of the entire story so far. Include characters and events ect.",
+        description:
+            "Save a summary of the entire story so far. Include characters and events ect.",
         parameters: {
             type: "object",
             properties: {
                 summary: {
                     type: "string",
-                    description:
-                        "Summary of the entire story",
+                    description: "Summary of the entire story",
                 },
             },
             required: ["summary"],
@@ -240,15 +272,15 @@ async function generateSummary(session: AdventureSession, newMessage: ChatComple
     const completion = await ai.chatCompletion(
         [
             session.messages[0].summary,
-            ...session.messages.slice(1).map(m => m.message),
-            newMessage
+            ...session.messages.slice(1).map((m) => m.message),
+            newMessage,
         ],
         {
             functions: [functionDef],
             function_call: {
                 name: "submit_summary",
-            }
-        },
+            },
+        }
     );
 
     if (!completion || !completion.function_call) throw new Error("No summary");
@@ -258,17 +290,19 @@ async function generateSummary(session: AdventureSession, newMessage: ChatComple
     return { role: "assistant", content: parameters.summary };
 }
 
-async function updatePlan(session: AdventureSession): Promise<ChatCompletionMessageParam> {
+async function updatePlan(
+    session: AdventureSession
+): Promise<ChatCompletionMessageParam> {
     const functionDef = {
         name: "update_plan",
-        description: "Update the plan for the story. Plan out expected plot, fail conditions and characters. Don't make the plan too large",
+        description:
+            "Update the plan for the story. Plan out expected plot, fail conditions and characters. Don't make the plan too large",
         parameters: {
             type: "object",
             properties: {
                 plan: {
                     type: "string",
-                    description:
-                        "Full updated plan",
+                    description: "Full updated plan",
                 },
             },
             required: ["plan"],
@@ -279,29 +313,25 @@ async function updatePlan(session: AdventureSession): Promise<ChatCompletionMess
     if (session.messages.length > 0) {
         messages = [
             session.messages[0].summary,
-            ...session.messages.slice(1).map(m => m.message),
+            ...session.messages.slice(1).map((m) => m.message),
         ];
     }
 
-
     const completion = await ai.chatCompletion(
-        [
-            createSystemPrompt(session.theme),
-            ...messages,
-        ],
+        [createSystemPrompt(session.theme), ...messages],
         {
             functions: [functionDef],
             function_call: {
                 name: "update_plan",
-            }
-        },
+            },
+        }
     );
 
     if (!completion || !completion.function_call) throw new Error("No summary");
 
     const parameters = JSON.parse(completion.function_call!.arguments!);
     log.debug("plan: ", parameters.plan);
-    return { role: 'system', content: `Current plan: ${parameters.plan}` };
+    return { role: "system", content: `Current plan: ${parameters.plan}` };
 }
 
 export const startAdventureCommand: Command<ChatInputCommandInteraction> = {
@@ -314,7 +344,10 @@ export const startAdventureCommand: Command<ChatInputCommandInteraction> = {
                 .setDescription("theme of the adventure")
                 .setRequired(true)
         ),
-    handleCommand: async (_client: Client, interaction: ChatInputCommandInteraction) => {
+    handleCommand: async (
+        _client: Client,
+        interaction: ChatInputCommandInteraction
+    ) => {
         try {
             const theme = interaction.options.get("theme", true);
             const reply = await interaction.reply({
@@ -326,7 +359,10 @@ export const startAdventureCommand: Command<ChatInputCommandInteraction> = {
                 autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
             });
 
-            const result = await startAdventure(thread.id, theme.value as string);
+            const result = await startAdventure(
+                thread.id,
+                theme.value as string
+            );
             await handleAdventureResult(thread, result);
         } catch (e) {
             log.error(e);

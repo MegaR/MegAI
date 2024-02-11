@@ -34,10 +34,10 @@ const googleImagesTool: Tool = {
             };
         });
 
-        for(const result of resultsFormatted.filter(r => r.imageLink)) {
+        for (const result of resultsFormatted.filter((r) => r.imageLink)) {
             const image = await downloadImage(result.imageLink!);
-            if(session) {
-                session.attachments.push({file: image, name: 'image.png'});
+            if (session) {
+                session.attachments.push({ file: image, name: "image.png" });
             }
         }
 
@@ -46,7 +46,7 @@ const googleImagesTool: Tool = {
 };
 
 async function downloadImage(url: string): Promise<any> {
-    const response = await axios.get(url, {responseType: 'arraybuffer'});
+    const response = await axios.get(url, { responseType: "arraybuffer" });
     return response.data;
 }
 

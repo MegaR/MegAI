@@ -18,7 +18,11 @@ const wikipediaTool: Tool = {
     },
     execute: async (parameters: any) => {
         const summary = await wiki.summary(parameters.query);
-        return JSON.stringify({title: summary.title, summary: summary.extract, link: summary.content_urls.desktop.page});
+        return JSON.stringify({
+            title: summary.title,
+            summary: summary.extract,
+            link: summary.content_urls.desktop.page,
+        });
     },
 };
 

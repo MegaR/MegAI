@@ -1,4 +1,9 @@
-import { ChatInputCommandInteraction, Client, EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import {
+    ChatInputCommandInteraction,
+    Client,
+    EmbedBuilder,
+    SlashCommandBuilder,
+} from "discord.js";
 import Command from "./command.interface";
 import { getLogger } from "../logger";
 import { ai } from "../openaiwrapper";
@@ -10,12 +15,12 @@ export const instructCommand: Command<ChatInputCommandInteraction> = {
         .setName("instruct")
         .setDescription("Use instruct-GPT")
         .addStringOption((option) =>
-            option
-                .setName("prompt")
-                .setDescription("Prompt")
-                .setRequired(true)
+            option.setName("prompt").setDescription("Prompt").setRequired(true)
         ),
-    handleCommand: async (_client: Client, interaction: ChatInputCommandInteraction) => {
+    handleCommand: async (
+        _client: Client,
+        interaction: ChatInputCommandInteraction
+    ) => {
         const reply = await interaction.reply({
             embeds: [new EmbedBuilder().setTitle("I'm thinking...⌛")],
         });
@@ -35,11 +40,9 @@ export const instructCommand: Command<ChatInputCommandInteraction> = {
             await reply.edit({
                 embeds: [embed],
             });
-
         } catch (e) {
             log.error(e);
             reply.edit("❌ Something went wrong. 😢");
         }
     },
-
-}
+};

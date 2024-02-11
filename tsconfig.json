@@ -1,22 +1,22 @@
 {
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "build"],
-  "compilerOptions": {
-    "incremental": true,
-    "target": "es2016",
-    "lib": ["es6"],
-    "module": "commonjs",
-    "rootDir": "src",
-    "sourceRoot": "src",
-    "inlineSourceMap": true,
-    "resolveJsonModule": true,
-    "allowJs": true,
-    "outDir": "build",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "noImplicitAny": true,
-    "skipLibCheck": true,
-    "rootDirs": ["src"]
-  },
+    "include": ["src/**/*"],
+    "exclude": ["node_modules", "build"],
+    "compilerOptions": {
+        "incremental": true,
+        "target": "es2016",
+        "lib": ["es6"],
+        "module": "commonjs",
+        "rootDir": "src",
+        "sourceRoot": "src",
+        "inlineSourceMap": true,
+        "resolveJsonModule": true,
+        "allowJs": true,
+        "outDir": "build",
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "noImplicitAny": true,
+        "skipLibCheck": true,
+        "rootDirs": ["src"]
+    }
 }

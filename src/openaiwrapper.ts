@@ -1,6 +1,9 @@
 import OpenAI from "openai";
 import Lock from "./lock";
-import { ChatCompletionCreateParamsNonStreaming, ChatCompletionMessageParam } from "openai/resources/chat/completions";
+import {
+    ChatCompletionCreateParamsNonStreaming,
+    ChatCompletionMessageParam,
+} from "openai/resources/chat/completions";
 import { getLogger } from "./logger";
 import { MessageCreateParams } from "openai/resources/beta/threads/messages/messages";
 import { RunSubmitToolOutputsParams } from "openai/resources/beta/threads/runs/runs";
@@ -11,12 +14,18 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API,
 });
 const lock = new Lock();
-const logger = getLogger('openai');
+const logger = getLogger("openai");
 
-async function updateAssistant(params: AssistantUpdateParams, assistantId?: string) {
+async function updateAssistant(
+    params: AssistantUpdateParams,
+    assistantId?: string
+) {
     await lock.acquire();
     try {
-        await openai.beta.assistants.update(assistantId || process.env.OPENAI_ASSISTANT!, params);
+        await openai.beta.assistants.update(
+            assistantId || process.env.OPENAI_ASSISTANT!,
+            params
+        );
     } finally {
         lock.release();
     }
@@ -40,16 +49,17 @@ async function addMessage(threadId: string, message: MessageCreateParams) {
     }
 }
 
-async function assistantCompletion(threadId: string, instructions: string | undefined, assistantId?: string) {
+async function assistantCompletion(
+    threadId: string,
+    instructions: string | undefined,
+    assistantId?: string
+) {
     await lock.acquire();
     try {
-        const run = await openai.beta.threads.runs.create(
-            threadId,
-            {
-                assistant_id: assistantId || process.env.OPENAI_ASSISTANT!,
-                instructions,
-            }
-        );
+        const run = await openai.beta.threads.runs.create(threadId, {
+            assistant_id: assistantId || process.env.OPENAI_ASSISTANT!,
+            instructions,
+        });
 
         return run;
     } finally {
@@ -76,7 +86,11 @@ async function cancelRun(threadId: string, runId: string) {
     }
 }
 
-async function submitToolOutputs(threadId: string, runId: string, toolOutputs: Array<RunSubmitToolOutputsParams.ToolOutput>) {
+async function submitToolOutputs(
+    threadId: string,
+    runId: string,
+    toolOutputs: Array<RunSubmitToolOutputsParams.ToolOutput>
+) {
     await lock.acquire();
     try {
         const run = await openai.beta.threads.runs.submitToolOutputs(
@@ -95,7 +109,10 @@ async function submitToolOutputs(threadId: string, runId: string, toolOutputs: A
 async function getMessages(threadId: string, after?: string) {
     await lock.acquire();
     try {
-        const messages = await openai.beta.threads.messages.list(threadId, { after, order: 'asc' });
+        const messages = await openai.beta.threads.messages.list(threadId, {
+            after,
+            order: "asc",
+        });
         return messages.data;
     } finally {
         lock.release();
@@ -107,7 +124,7 @@ async function createFile(file: ArrayBuffer, name: string) {
     try {
         const result = await openai.files.create({
             file: await toFile(file, name),
-            purpose: 'assistants',
+            purpose: "assistants",
         });
         return result.id;
     } finally {
@@ -136,7 +153,8 @@ async function retrieveFile(fileId: string) {
 async function getRunSteps(threadId: string, runId: string) {
     await lock.acquire();
     try {
-        return (await openai.beta.threads.runs.steps.list(threadId, runId)).data;
+        return (await openai.beta.threads.runs.steps.list(threadId, runId))
+            .data;
     } finally {
         lock.release();
     }
@@ -144,7 +162,7 @@ async function getRunSteps(threadId: string, runId: string) {
 
 async function chatCompletion(
     messages: ChatCompletionMessageParam[],
-    options?: Partial<ChatCompletionCreateParamsNonStreaming>,
+    options?: Partial<ChatCompletionCreateParamsNonStreaming>
 ) {
     await lock.acquire();
     try {
@@ -195,10 +213,10 @@ async function dalle(prompt: string) {
     try {
         const response = await openai.images.generate({
             prompt,
-            model: 'dall-e-3',
-            size: '1024x1024',
-            quality: 'hd',
-            response_format: 'b64_json',
+            model: "dall-e-3",
+            size: "1024x1024",
+            quality: "hd",
+            response_format: "b64_json",
         });
         logger.debug(response.data[0].revised_prompt);
         return response.data[0].b64_json!;

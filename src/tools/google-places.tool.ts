@@ -19,21 +19,21 @@ const googlePlacesTool: Tool = {
     execute: async (parameters: any) => {
         const results = await places("v1").places.searchText({
             auth: process.env.GOOGLE_API_KEY,
-            fields: '*',
+            fields: "*",
             requestBody: {
                 textQuery: parameters.query,
                 maxResultCount: 5,
-            }
+            },
         });
-        const resultsFormatted = results.data.places?.map(place => {
-                return {
-                    name: place.name,
-                    address: place.formattedAddress,
-                    location: place.location,
-                    rating: place.rating,
-                    websiteUri: place.websiteUri,
-                    openingHours: place.regularOpeningHours?.weekdayDescriptions,
-                };
+        const resultsFormatted = results.data.places?.map((place) => {
+            return {
+                name: place.name,
+                address: place.formattedAddress,
+                location: place.location,
+                rating: place.rating,
+                websiteUri: place.websiteUri,
+                openingHours: place.regularOpeningHours?.weekdayDescriptions,
+            };
         });
         return JSON.stringify(resultsFormatted, null, 2);
     },

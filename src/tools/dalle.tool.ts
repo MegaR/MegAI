@@ -24,9 +24,9 @@ const dalleTool: Tool = {
         const image = await ai.dalle(parameters.prompt);
         const data = Buffer.from(image, "base64");
         if (session) {
-            session.attachments.push({ file: data, name: 'image.png' });
+            session.attachments.push({ file: data, name: "image.png" });
         }
-        return 'Image is attached to response.';
+        return "Image is attached to response.";
     },
 };
 

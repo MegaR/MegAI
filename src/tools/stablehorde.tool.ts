@@ -10,7 +10,7 @@ interface Model {
 }
 
 const stableHordeApiKey = process.env.STABLE_HORDE;
-const log = getLogger('StableHorde');
+const log = getLogger("StableHorde");
 
 const models: Model[] = [
     // {
@@ -61,7 +61,7 @@ const stableHordeTool: Tool = {
         const url = await waitForResult(id);
         const stream = await downloadImage(url);
         if (session) {
-            session.attachments.push({ file: stream, name: 'image.png' });
+            session.attachments.push({ file: stream, name: "image.png" });
         }
         return url;
     },
@@ -114,7 +114,7 @@ async function sleep(time: number) {
 }
 
 async function downloadImage(url: string): Promise<any> {
-    const response = await axios.get(url, { responseType: 'arraybuffer' });
+    const response = await axios.get(url, { responseType: "arraybuffer" });
     return response.data;
 }
 
