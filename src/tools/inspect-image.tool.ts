@@ -6,7 +6,7 @@ const logger = getLogger('inspectImageTool');
 const inspectImageTool: Tool = {
     definition: {
         name: 'inspect_image',
-        description: 'The inspect_image tool allows you to view an image. You pass the tool an url and a prompt with a question about the image. Example prompts: \'Describe the image?\`, \'How many people are in this image?\'',
+        description: 'The inspect_image tool allows you to view an image. You pass the tool an url and a prompt with a question about the image. Example prompts: \'Describe the image?\', \'How many people are in this image?\'',
         parameters: {
             type: "object",
             properties: {

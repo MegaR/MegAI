@@ -20,6 +20,9 @@
   "devDependencies": {
     "@types/luxon": "^3.3.4",
     "@types/node": "^20.3.1",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.56.0",
     "prisma": "^5.5.2",
     "tsc-watch": "^6.0.4",
     "typescript": "^5.1.3"

@@ -1,4 +1,4 @@
-import { AttachmentBuilder, ChatInputCommandInteraction, Client, ColorResolvable, EmbedBuilder, Message, SlashCommandBuilder, ThreadChannel } from "discord.js";
+import { ChatInputCommandInteraction, Client, ColorResolvable, EmbedBuilder, SlashCommandBuilder, ThreadChannel } from "discord.js";
 import Command from "./command.interface";
 import { getLogger } from "../logger";
 import { ai } from "../openaiwrapper";
@@ -9,18 +9,20 @@ import googlePlacesTool from "../tools/google-places.tool";
 import wikipediaTool from "../tools/wikipedia.tool";
 import browserTool from "../tools/browser.tool";
 import { AssistantUpdateParams } from "openai/resources/beta/assistants/assistants";
-import { Thread } from "openai/resources/beta/threads/threads";
 import { MessageContentText, MessageCreateParams, ThreadMessage } from "openai/resources/beta/threads/messages/messages";
 import { sleep } from "openai/core";
 import { RequiredActionFunctionToolCall, RunSubmitToolOutputsParams } from "openai/resources/beta/threads/runs/runs";
+import dalleTool from "../tools/dalle.tool";
+import inspectImageTool from "../tools/inspect-image.tool";
 
 const tools: Tool[] = [
     googleTool,
     googleImagesTool,
     googlePlacesTool,
     wikipediaTool,
-    // dalleTool,
+    dalleTool,
     browserTool,
+    inspectImageTool,
 ];
 
 const log = getLogger('Task');
@@ -149,7 +151,7 @@ async function handleRun(threadId: string, runId: string): Promise<
             const toolOutputs: RunSubmitToolOutputsParams.ToolOutput[] = [];
             for (const call of toolCalls) {
                 const retVal = await handleToolCall(call);
-                if(retVal.rating === 10) {
+                if (retVal.rating === 10) {
                     return true;
                 }
                 toolOutputs.push(retVal.output);

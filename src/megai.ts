@@ -1,7 +1,6 @@
 import Tool from "./tool.interface";
 import googleTool from "./tools/google.tool";
 import wikipediaTool from "./tools/wikipedia.tool";
-import mathTool from "./tools/math.tool";
 import { Session } from "./session.interface";
 import googleImagesTool from "./tools/google-images.tool";
 import { getLogger } from "./logger";
@@ -115,7 +114,7 @@ export class MegAI {
         const thread = await this.getThread(session.channelId);
         await thread.lock.acquire();
         try {
-            let threadId = thread.threadId;
+            const threadId = thread.threadId;
             const messageId = (await ai.addMessage(threadId, message)).id;
             const run = await ai.assistantCompletion(threadId, personality.content);
             let status;
