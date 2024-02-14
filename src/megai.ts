@@ -18,6 +18,7 @@ import {
     RunSubmitToolOutputsParams,
 } from "openai/resources/beta/threads/runs/runs";
 import inspectImageTool from "./tools/inspect-image.tool";
+import jupyterTool from "./tools/jupyter.tool";
 
 const personality: ChatCompletionSystemMessageParam = {
     role: "system",
@@ -51,6 +52,7 @@ export class MegAI {
         // weatherTool,
         // elevenLabsTool,
         inspectImageTool,
+        jupyterTool,
     ];
     private threadMap = new Map<string, Thread>();
 
@@ -67,7 +69,7 @@ export class MegAI {
             type: "function",
             function: t.definition,
         }));
-        definitions.push({ type: "code_interpreter" });
+        // definitions.push({ type: "code_interpreter" });
         ai.updateAssistant({
             tools: definitions,
         });
@@ -218,7 +220,10 @@ export class MegAI {
         // Tool not found
         if (!tool) {
             this.log.warn(`❌ Tool ${call.function.name} not found`);
-            throw new Error(`Unknown tool ${call.function.name}`);
+            return {
+                tool_call_id: call.id,
+                output: "This function is not available",
+            };
         }
 
         // Admin only tool
@@ -233,7 +238,9 @@ export class MegAI {
         // Add tool call to footer
         this.log.debug("tool call:", call.function.name);
         session.footer.push(
-            `🔧 ${call.function.name}: ${JSON.stringify(call.function.arguments)}`
+            `🔧 ${call.function.name}: ${JSON.stringify(
+                call.function.arguments
+            ).slice(0, 100)}`
         );
         await update(session);
 

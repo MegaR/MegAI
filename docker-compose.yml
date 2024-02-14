@@ -41,3 +41,11 @@ services:
             MAX_CONCURRENT_CONNECTIONS: "10"
         ports:
             - 3000:3000
+
+    jupyter:
+        image: quay.io/jupyter/scipy-notebook:latest
+        restart: "no"
+        ports:
+            - 8888:8888
+        volumes:
+            - ./jupyter-data:/home/jovyan/work
