@@ -12,5 +12,6 @@ WORKDIR /app
 COPY package*.json bun.lockb ./
 RUN bun install
 COPY . .
+RUN patch node_modules/prismarine-auth/src/TokenManagers/XboxTokenManager.js XboxTokenManager.js.patch
 RUN bunx prisma generate
 CMD bun run start

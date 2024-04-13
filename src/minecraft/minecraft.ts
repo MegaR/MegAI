@@ -92,11 +92,11 @@ export const minecraftCommand: Command<ChatInputCommandInteraction> = {
 
 async function connect(interaction: ChatInputCommandInteraction) {
     bot = mineflayer.createBot({
-        host: "192.168.2.101",
-        port: 1234,
-        version: "1.20.1",
-        username: "raalders.28@gmail.com",
-        auth: "microsoft",
+        host: z.string().parse(process.env.MINECRAFT_HOST),
+        port: z.coerce.number().parse(process.env.MINECRAFT_PORT),
+        version: process.env.MINECRAFT_VERSION,
+        username: z.string().parse(process.env.MINECRAFT_USERNAME),
+        auth: z.enum(["mojang", "microsoft", "offline"]).parse(process.env.MINECRAFT_AUTH),
     });
     bot.loadPlugins([
         pathfinder,
@@ -192,7 +192,7 @@ async function updateStatus() {
         return;
     }
 
-    const dimension = bot.game.dimension;
+    const dimension = bot.game?.dimension;
     let position = " ";
     if (bot.entity?.position) {
         position = `(${bot.entity.position.x.toFixed(2)}, ${bot.entity.position.y.toFixed(2)}, ${bot.entity.position.z.toFixed(2)})`;
