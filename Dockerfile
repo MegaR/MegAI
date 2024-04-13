@@ -1,7 +1,7 @@
 FROM oven/bun
 
 RUN apt update \
-    && apt install -y curl
+    && apt install -y curl patch
 ARG NODE_VERSION=18
 RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n \
     && bash n $NODE_VERSION \
