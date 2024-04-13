@@ -10,7 +10,6 @@ declare module "mineflayer" {
 
 export default function commandStickPlugin(bot: Bot) {
     bot.on("entitySwingArm", (entity) => {
-        console.log(entity.heldItem?.name);
         if (entity.heldItem?.name !== "stick") {
             return;
         }

@@ -132,7 +132,7 @@ async function disconnect(interaction: ChatInputCommandInteraction) {
     bot = undefined;
     await updateStatus();
     statusMessage = undefined;
-    await interaction.reply({ content: "❌ Disconnected", ephemeral: true });
+    await interaction.reply({ content: "⛔ Disconnected", ephemeral: true });
     await updateStatus();
 }
 
@@ -197,6 +197,16 @@ async function updateStatus() {
     if (bot.entity?.position) {
         position = `(${bot.entity.position.x.toFixed(2)}, ${bot.entity.position.y.toFixed(2)}, ${bot.entity.position.z.toFixed(2)})`;
     }
+    let hearts = '';
+    if(!bot.health) {
+        hearts = '🖤'.repeat(10);
+    } else {
+        hearts += '❤️'.repeat(Math.floor(bot.health/2));
+        hearts += '💔'.repeat(bot.health % 2);
+        hearts += '🖤'.repeat(10 - Math.ceil(bot.health/2));
+    }
+    console.log(hearts);
+
     await statusMessage.edit({
         embeds: [
             new EmbedBuilder()
@@ -212,6 +222,10 @@ async function updateStatus() {
                         name: "📌 Location",
                         value: (position || " ").toString(),
                         inline: true,
+                    },
+                    {
+                        name: "Health",
+                        value: hearts,
                     },
                     {
                         name: "Mode",
