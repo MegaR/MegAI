@@ -25,12 +25,13 @@ import { dalleCommand } from "./commands/dalle.command";
 import clearCommand from "./commands/clear.command";
 import { taskCommand } from "./commands/task.command";
 import { imageCommand } from "./commands/image.command";
+import { minecraftCommand } from "./minecraft/minecraft";
 
 const log = getLogger("main");
 
 async function start() {
     const client = await setupDiscord();
-    const megAI = new MegAI(client.user?.username!);
+    const megAI = new MegAI(client.user!.username);
     const commands = [
         startAdventureCommand,
         instructCommand,
@@ -39,6 +40,7 @@ async function start() {
         taskCommand,
         new clearCommand(megAI),
         imageCommand,
+        minecraftCommand,
     ];
     await setupCommands();
     client.on(Events.MessageCreate, async (message) => {
@@ -141,7 +143,7 @@ async function start() {
 
     async function updateMessage(message: Message<boolean>, session: Session) {
         let embed = new EmbedBuilder();
-        let files: AttachmentBuilder[] = [];
+        const files: AttachmentBuilder[] = [];
         if (session.responses.length > 0) {
             embed = embed.setDescription(session.responses.join("\n"));
         }
