@@ -20,6 +20,7 @@ import gotoMode from "./goto.mode";
 import commandStickPlugin from "./commandStick.plugin";
 import modePlugin from "./mode.plugin";
 import emptyInventoryMode from "./emptyinventory.mode";
+import fillInventoryMode from "./fillinventory.mode";
 
 const logger = getLogger("minecraft");
 let bot: mineflayer.Bot | undefined;
@@ -144,7 +145,11 @@ async function disconnect(interaction: ChatInputCommandInteraction) {
 async function handleStickCommand(block: Block | undefined, player: Player) {
     if (block) {
         if(block.name === "chest") {
-            return bot!.setMode(emptyInventoryMode(bot!, block));
+            if(bot!.inventory.items().length > 0) {
+                return bot!.setMode(emptyInventoryMode(bot!, block));
+            } else {
+                return bot!.setMode(fillInventoryMode(bot!, block));
+            }
         }
         return bot!.setMode(
             gotoMode(bot!, block.position.x, block.position.y + 1, block.position.z)
