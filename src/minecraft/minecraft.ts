@@ -6,7 +6,7 @@ import {
     SlashCommandBuilder,
 } from "discord.js";
 import Command from "../commands/command.interface";
-import mineflayer, { Player } from "mineflayer";
+import mineflayer, { Player, Bot } from "mineflayer";
 import { getLogger } from "../logger";
 import { pathfinder } from "mineflayer-pathfinder";
 import { Block } from "prismarine-block";
@@ -23,7 +23,7 @@ import emptyInventoryMode from "./emptyinventory.mode";
 import fillInventoryMode from "./fillinventory.mode";
 
 const logger = getLogger("minecraft");
-let bot: mineflayer.Bot | undefined;
+let bot: Bot | undefined;
 let statusMessage: Message | undefined;
 let statusInterval: NodeJS.Timeout | undefined;
 
@@ -97,8 +97,13 @@ async function connect(interaction: ChatInputCommandInteraction) {
         port: z.coerce.number().parse(process.env.MINECRAFT_PORT),
         version: process.env.MINECRAFT_VERSION,
         username: z.string().parse(process.env.MINECRAFT_USERNAME),
-        auth: z.enum(["mojang", "microsoft", "offline"]).parse(process.env.MINECRAFT_AUTH),
-        profilesFolder: z.string().optional().parse(process.env.MINECRAFT_PROFILEFOLDER),
+        auth: z
+            .enum(["mojang", "microsoft", "offline"])
+            .parse(process.env.MINECRAFT_AUTH),
+        profilesFolder: z
+            .string()
+            .optional()
+            .parse(process.env.MINECRAFT_PROFILEFOLDER),
     });
     bot.loadPlugins([
         pathfinder,
@@ -126,7 +131,7 @@ async function connect(interaction: ChatInputCommandInteraction) {
 
     bot.on("modeChanged", () => {
         updateStatus();
-    })
+    });
 }
 
 async function disconnect(interaction: ChatInputCommandInteraction) {
@@ -144,15 +149,20 @@ async function disconnect(interaction: ChatInputCommandInteraction) {
 
 async function handleStickCommand(block: Block | undefined, player: Player) {
     if (block) {
-        if(block.name === "chest") {
-            if(bot!.inventory.items().length > 0) {
+        if (block.name === "chest") {
+            if (bot!.inventory.items().length > 0) {
                 return bot!.setMode(emptyInventoryMode(bot!, block));
             } else {
                 return bot!.setMode(fillInventoryMode(bot!, block));
             }
         }
         return bot!.setMode(
-            gotoMode(bot!, block.position.x, block.position.y + 1, block.position.z)
+            gotoMode(
+                bot!,
+                block.position.x,
+                block.position.y + 1,
+                block.position.z
+            )
         );
     }
 
@@ -198,30 +208,75 @@ async function updateStatus() {
     if (bot.entity?.position) {
         position = `(${bot.entity.position.x.toFixed(2)}, ${bot.entity.position.y.toFixed(2)}, ${bot.entity.position.z.toFixed(2)})`;
     }
-    let hearts = '';
-    if(!bot.health) {
-        hearts = '🖤'.repeat(10);
+    let hearts = "";
+    if (!bot.health) {
+        hearts = "🖤".repeat(10);
     } else {
-        hearts += '❤️'.repeat(Math.floor(bot.health/2));
-        hearts += '💔'.repeat(bot.health % 2);
-        hearts += '🖤'.repeat(10 - Math.ceil(bot.health/2));
+        hearts += "❤️".repeat(Math.floor(bot.health / 2));
+        hearts += "💔".repeat(bot.health % 2);
+        hearts += "🖤".repeat(10 - Math.ceil(bot.health / 2));
     }
 
-    let saturation = '';
-    if(bot.food === undefined) {
-        saturation = '🍽️'.repeat(10);
+    let saturation = "";
+    if (bot.food === undefined) {
+        saturation = "🍽️".repeat(10);
     } else {
-        saturation += '🍗'.repeat(Math.floor(bot.food/2));
-        saturation += '🍗'.repeat(bot.food % 2);
-        saturation += '🍽️'.repeat(10 - Math.ceil(bot.food/2));
+        saturation += "🍗".repeat(Math.floor(bot.food / 2));
+        saturation += "🍗".repeat(bot.food % 2);
+        saturation += "🍽️".repeat(10 - Math.ceil(bot.food / 2));
+    }
+
+    // const equipment = bot.entity.equipment;
+    // if (equipment[1]) {
+    //     await bot.unequip("off-hand");
+    // }
+    // if (equipment[2]) {
+    //     await bot.unequip("feet");
+    // }
+    // if (equipment[3]) {
+    //     await bot.unequip("legs");
+    // }
+    // if (equipment[4]) {
+    //     await bot.unequip("torso");
+    // }
+    // if (equipment[5]) {
+    //     await bot.unequip("head");
+    // }
+    const equipment = bot.entity?.equipment;
+    let equipmentText: string;
+    if (!equipment) {
+        equipmentText = "⏳";
+    } else {
+        equipmentText = `🪖 ${equipment[5]?.displayName || "None"} `;
+        equipmentText += `👕 ${equipment[4]?.displayName || "None"} `;
+        equipmentText += `👖 ${equipment[3]?.displayName || "None"} `;
+        equipmentText += `👞 ${equipment[2]?.displayName || "None"} `;
+        equipmentText += `🫲 ${equipment[1]?.displayName || "None"} `;
+    }
+
+    let inventory: string;
+    if (bot.inventory.items().length === 0) {
+        inventory = "🗑️ Empty";
+    } else {
+        inventory = bot.inventory
+            .items()
+            .map((i) => `${i.count}x ${i.displayName}`)
+            .join(", ");
     }
 
     await statusMessage.edit({
+        content: "",
         embeds: [
             new EmbedBuilder()
                 .setTitle("⛏️ Connected")
                 .setDescription(" ")
+                .setColor(0x5b8b32)
                 .addFields(
+                    {
+                        name: "Mode",
+                        value: bot.mode.name,
+                    },
+                    { name: "\t", value: "\t" },
                     {
                         name: "🌏 Dimension",
                         value: dimension || " ",
@@ -232,21 +287,29 @@ async function updateStatus() {
                         value: (position || " ").toString(),
                         inline: true,
                     },
+                    { name: "\t", value: "\t" },
                     {
-                        name: "Health",
+                        name: "💊 Health",
                         value: hearts,
+                        inline: true,
                     },
                     {
-                        name: "Saturation",
+                        name: "🍔 Saturation",
                         value: saturation,
+                        inline: true,
+                    },
+                    { name: "\t", value: "\t" },
+                    {
+                        name: "🔧 Equipment",
+                        value: equipmentText,
                     },
                     {
-                        name: "Mode",
-                        value: bot.mode.name,
+                        name: "📦 Inventory",
+                        value: inventory,
                     }
-                ),
+                )
+                .setTimestamp(),
         ],
-        content: "",
     });
 }
 

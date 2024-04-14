@@ -8,11 +8,12 @@ import { Movements, goals } from "mineflayer-pathfinder";
 const logger = getLogger("emptyInventoryMode");
 export default function emptyInventoryMode(bot: Bot, block: Block): BotMode {
     return {
-        name: "Empty inventory",
+        name: "🚮 Empty inventory",
         start: async () => {
             const movement = new Movements(bot);
             movement.canOpenDoors = true;
             movement.canDig = false;
+            movement.allow1by1towers = false;
             movement.allowParkour = true;
             movement.allowFreeMotion = true;
             bot.pathfinder.setMovements(movement);

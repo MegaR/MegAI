@@ -9,6 +9,7 @@ export default function gotoMode(bot: Bot, x: number, y: number, z?: number): Bo
             const movement = new Movements(bot);
             movement.canOpenDoors = true;
             movement.canDig = false;
+            movement.allow1by1towers = false;
             movement.allowParkour = true;
             movement.allowFreeMotion = true;
             bot.pathfinder.setMovements(movement);

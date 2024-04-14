@@ -9,6 +9,7 @@ export default function followMode(bot: Bot, player: Player): BotMode {
             const movement = new Movements(bot);
             movement.canOpenDoors = true;
             movement.canDig = false;
+            movement.allow1by1towers = false;
             movement.allowParkour = true;
             movement.allowFreeMotion = true;
 
