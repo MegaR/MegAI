@@ -97,6 +97,7 @@ async function connect(interaction: ChatInputCommandInteraction) {
         version: process.env.MINECRAFT_VERSION,
         username: z.string().parse(process.env.MINECRAFT_USERNAME),
         auth: z.enum(["mojang", "microsoft", "offline"]).parse(process.env.MINECRAFT_AUTH),
+        profilesFolder: z.string().optional().parse(process.env.MINECRAFT_PROFILEFOLDER),
     });
     bot.loadPlugins([
         pathfinder,
@@ -148,7 +149,6 @@ async function setMode(newMode: BotMode) {
 
 async function handleStickCommand(block: Block | undefined, player: Player) {
     if (block) {
-        console.log(block);
         setMode(
             gotoMode(block.position.x, block.position.y + 1, block.position.z)
         );
@@ -205,7 +205,6 @@ async function updateStatus() {
         hearts += '💔'.repeat(bot.health % 2);
         hearts += '🖤'.repeat(10 - Math.ceil(bot.health/2));
     }
-    console.log(hearts);
 
     await statusMessage.edit({
         embeds: [
