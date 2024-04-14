@@ -2,12 +2,10 @@ import { Bot, Player } from "mineflayer";
 import BotMode from "./mode.interface";
 import { Movements, goals } from "mineflayer-pathfinder";
 
-export default function followMode(player: Player): BotMode {
-    let bot: Bot;
+export default function followMode(bot: Bot, player: Player): BotMode {
     return {
         name: "🦵 Follow",
-        start: async (currentBot: Bot) => {
-            bot = currentBot;
+        start: async () => {
             const movement = new Movements(bot);
             movement.canOpenDoors = true;
             movement.canDig = false;

@@ -1,6 +1,7 @@
 import { Bot } from "mineflayer";
 import vec3 from "vec3";
 import { Block } from "prismarine-block";
+import { Entity } from "prismarine-entity";
 
 declare module "mineflayer" {
     interface BotEvents {
@@ -9,7 +10,7 @@ declare module "mineflayer" {
 }
 
 export default function commandStickPlugin(bot: Bot) {
-    bot.on("entitySwingArm", (entity) => {
+    const callback = debounce(async (entity: Entity) => {
         if (entity.heldItem?.name !== "stick") {
             return;
         }
@@ -22,5 +23,18 @@ export default function commandStickPlugin(bot: Bot) {
             | Block
             | undefined;
         bot.emit("stickCommand", block, bot.players[entity.username!]);
-    });
+    }, 100);
+
+    bot.on("entitySwingArm", callback);
+}
+
+function debounce<T>(func: (...args: T[]) => void, ms: number) {
+    let last = Date.now();
+    return (...args: T[]) => {
+        if(Date.now() < last + ms) {
+            return;
+        }
+        last = Date.now();
+        func(...args);
+    }
 }

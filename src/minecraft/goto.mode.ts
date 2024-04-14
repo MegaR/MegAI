@@ -2,12 +2,10 @@ import { Bot } from "mineflayer";
 import BotMode from "./mode.interface";
 import { Movements, goals } from "mineflayer-pathfinder";
 
-export default function gotoMode(x: number, y: number, z?: number): BotMode {
-    let bot: Bot;
+export default function gotoMode(bot: Bot, x: number, y: number, z?: number): BotMode {
     return {
         name: "📌 goto",
-        start: async (currentBot: Bot) => {
-            bot = currentBot;
+        start: async () => {
             const movement = new Movements(bot);
             movement.canOpenDoors = true;
             movement.canDig = false;

@@ -14,16 +14,15 @@ import armorManager from "mineflayer-armor-manager";
 import autoeat from "mineflayer-auto-eat";
 import mineflayerTool from "mineflayer-tool";
 import { z } from "zod";
-import BotMode from "./mode.interface";
 import idleMode from "./idle.mode";
 import followMode from "./follow.mode";
 import gotoMode from "./goto.mode";
 import commandStickPlugin from "./commandStick.plugin";
 import modePlugin from "./mode.plugin";
+import emptyInventoryMode from "./emptyinventory.mode";
 
 const logger = getLogger("minecraft");
 let bot: mineflayer.Bot | undefined;
-let mode: BotMode = idleMode;
 let statusMessage: Message | undefined;
 let statusInterval: NodeJS.Timeout | undefined;
 
@@ -133,7 +132,7 @@ async function disconnect(interaction: ChatInputCommandInteraction) {
     if (!bot) {
         return;
     }
-    await mode.stop();
+    await bot.mode.stop();
     bot.quit();
     bot = undefined;
     await updateStatus();
@@ -144,17 +143,19 @@ async function disconnect(interaction: ChatInputCommandInteraction) {
 
 async function handleStickCommand(block: Block | undefined, player: Player) {
     if (block) {
-        bot!.setMode(
-            gotoMode(block.position.x, block.position.y + 1, block.position.z)
+        if(block.name === "chest") {
+            return bot!.setMode(emptyInventoryMode(bot!, block));
+        }
+        return bot!.setMode(
+            gotoMode(bot!, block.position.x, block.position.y + 1, block.position.z)
         );
-        return;
     }
 
     //toggle follow
-    if (mode.name === "🦵 Follow") {
+    if (bot!.mode.name === "🦵 Follow") {
         bot!.setMode(idleMode);
     } else {
-        bot!.setMode(followMode(player));
+        bot!.setMode(followMode(bot!, player));
     }
 }
 
@@ -236,7 +237,7 @@ async function updateStatus() {
                     },
                     {
                         name: "Mode",
-                        value: mode.name,
+                        value: bot.mode.name,
                     }
                 ),
         ],
@@ -257,7 +258,7 @@ async function follow(
         });
         return;
     }
-    await bot!.setMode(followMode(player));
+    await bot!.setMode(followMode(bot!, player));
     await interaction.reply({
         content: "🦵 following",
         ephemeral: true,
@@ -279,7 +280,7 @@ async function goto(
     const xCoord = z.coerce.number().parse(coordsArray[0]);
     const yCoord = z.coerce.number().parse(coordsArray[1]);
     const zCoord = z.coerce.number().optional().parse(coordsArray[2]);
-    await bot!.setMode(gotoMode(xCoord, yCoord, zCoord));
+    await bot!.setMode(gotoMode(bot!, xCoord, yCoord, zCoord));
     if (zCoord) {
         await interaction.reply({
             content: `📌 going to (${xCoord}, ${yCoord}, ${zCoord})`,
