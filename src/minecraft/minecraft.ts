@@ -206,6 +206,15 @@ async function updateStatus() {
         hearts += '🖤'.repeat(10 - Math.ceil(bot.health/2));
     }
 
+    let saturation = '';
+    if(bot.food === undefined) {
+        saturation = '🍗'.repeat(10);
+    } else {
+        saturation += '🍗'.repeat(Math.floor(bot.food/2));
+        saturation += '🍗'.repeat(bot.food % 2);
+        saturation += '🍽️'.repeat(10 - Math.ceil(bot.food/2));
+    }
+
     await statusMessage.edit({
         embeds: [
             new EmbedBuilder()
@@ -225,6 +234,10 @@ async function updateStatus() {
                     {
                         name: "Health",
                         value: hearts,
+                    },
+                    {
+                        name: "Saturation",
+                        value: saturation,
                     },
                     {
                         name: "Mode",
