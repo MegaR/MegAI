@@ -19,6 +19,7 @@ import idleMode from "./idle.mode";
 import followMode from "./follow.mode";
 import gotoMode from "./goto.mode";
 import commandStickPlugin from "./commandStick.plugin";
+import modePlugin from "./mode.plugin";
 
 const logger = getLogger("minecraft");
 let bot: mineflayer.Bot | undefined;
@@ -105,8 +106,8 @@ async function connect(interaction: ChatInputCommandInteraction) {
         autoeat.plugin,
         mineflayerTool.plugin,
         commandStickPlugin,
+        modePlugin,
     ]);
-    await setMode(idleMode);
 
     bot.on("chat", (username, message) => {
         logger.info(`${username}: ${message}`);
@@ -122,6 +123,10 @@ async function connect(interaction: ChatInputCommandInteraction) {
     bot.on("stickCommand", (block, player) => {
         handleStickCommand(block, player);
     });
+
+    bot.on("modeChanged", () => {
+        updateStatus();
+    })
 }
 
 async function disconnect(interaction: ChatInputCommandInteraction) {
@@ -137,19 +142,9 @@ async function disconnect(interaction: ChatInputCommandInteraction) {
     await updateStatus();
 }
 
-async function setMode(newMode: BotMode) {
-    if (!bot) {
-        throw new Error("Bot not set yet");
-    }
-    await mode.stop();
-    mode = newMode;
-    await mode.start(bot);
-    await updateStatus();
-}
-
 async function handleStickCommand(block: Block | undefined, player: Player) {
     if (block) {
-        setMode(
+        bot!.setMode(
             gotoMode(block.position.x, block.position.y + 1, block.position.z)
         );
         return;
@@ -157,9 +152,9 @@ async function handleStickCommand(block: Block | undefined, player: Player) {
 
     //toggle follow
     if (mode.name === "🦵 Follow") {
-        setMode(idleMode);
+        bot!.setMode(idleMode);
     } else {
-        setMode(followMode(player));
+        bot!.setMode(followMode(player));
     }
 }
 
@@ -208,7 +203,7 @@ async function updateStatus() {
 
     let saturation = '';
     if(bot.food === undefined) {
-        saturation = '🍗'.repeat(10);
+        saturation = '🍽️'.repeat(10);
     } else {
         saturation += '🍗'.repeat(Math.floor(bot.food/2));
         saturation += '🍗'.repeat(bot.food % 2);
@@ -254,7 +249,7 @@ async function follow(
     param: string | null
 ) {
     const username = z.string().parse(param);
-    const player = bot!.players[username];
+    const player = bot?.players[username];
     if (!player) {
         interaction.reply({
             content: "🔎 player not found",
@@ -262,7 +257,7 @@ async function follow(
         });
         return;
     }
-    await setMode(followMode(player));
+    await bot!.setMode(followMode(player));
     await interaction.reply({
         content: "🦵 following",
         ephemeral: true,
@@ -284,7 +279,7 @@ async function goto(
     const xCoord = z.coerce.number().parse(coordsArray[0]);
     const yCoord = z.coerce.number().parse(coordsArray[1]);
     const zCoord = z.coerce.number().optional().parse(coordsArray[2]);
-    await setMode(gotoMode(xCoord, yCoord, zCoord));
+    await bot!.setMode(gotoMode(xCoord, yCoord, zCoord));
     if (zCoord) {
         await interaction.reply({
             content: `📌 going to (${xCoord}, ${yCoord}, ${zCoord})`,
