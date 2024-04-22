@@ -27,3 +27,4 @@ build
 
 postgres-data/*
 models/*
+minecraft-data/*

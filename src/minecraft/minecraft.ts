@@ -91,7 +91,11 @@ export const minecraftCommand: Command<ChatInputCommandInteraction> = {
     },
 };
 
-async function connect(interaction: ChatInputCommandInteraction) {
+if(process.env.MINECRAFT_AUTOCONNECT === "true") {
+    connect();
+}
+
+async function connect(interaction?: ChatInputCommandInteraction) {
     bot = mineflayer.createBot({
         host: z.string().parse(process.env.MINECRAFT_HOST),
         port: z.coerce.number().parse(process.env.MINECRAFT_PORT),
@@ -117,12 +121,23 @@ async function connect(interaction: ChatInputCommandInteraction) {
     bot.on("chat", (username, message) => {
         logger.info(`${username}: ${message}`);
     });
-    await status(interaction);
-    statusInterval = setInterval(() => updateStatus(), 10000);
+    if(interaction) {
+        await status(interaction);
+        statusInterval = setInterval(() => updateStatus(), 10000);
+    }
 
     bot.once("spawn", () => {
+        logger.info("Connected");
         updateStatus();
         bot!.armorManager.equipAll();
+    });
+
+    bot.on("end", () => {
+        logger.info("Disconnected");
+    })
+
+    bot.on("error", error => {
+        logger.error(error);
     });
 
     bot.on("stickCommand", (block, player) => {
@@ -192,7 +207,6 @@ async function status(interaction: ChatInputCommandInteraction) {
 async function updateStatus() {
     if (!statusMessage) {
         clearInterval(statusInterval);
-        logger.warn("Can't update status. StatusMessage undefined");
         return;
     }
     if (!bot) {
