@@ -9,16 +9,14 @@ import { ChatCompletionSystemMessageParam } from "openai/resources/chat/completi
 import dalleTool from "./tools/dalle.tool";
 import browserTool from "./tools/browser.tool";
 import googlePlacesTool from "./tools/google-places.tool";
-import { MessageCreateParams } from "openai/resources/beta/threads/messages/messages";
 import { sleep } from "openai/core";
-import { AssistantUpdateParams } from "openai/resources/beta/assistants/assistants";
 import Lock from "./lock";
 import {
     RequiredActionFunctionToolCall,
     RunSubmitToolOutputsParams,
 } from "openai/resources/beta/threads/runs/runs";
-import inspectImageTool from "./tools/inspect-image.tool";
-import jupyterTool from "./tools/jupyter.tool";
+import { AssistantTool } from "openai/resources/beta/assistants";
+import { MessageCreateParams } from "openai/resources/beta/threads/messages";
 
 const personality: ChatCompletionSystemMessageParam = {
     role: "system",
@@ -51,8 +49,8 @@ export class MegAI {
         // sayTool,
         // weatherTool,
         // elevenLabsTool,
-        inspectImageTool,
-        jupyterTool,
+        // inspectImageTool,
+        // jupyterTool,
     ];
     private threadMap = new Map<string, Thread>();
 
@@ -61,11 +59,7 @@ export class MegAI {
             "BOTNAME",
             this.botName
         );
-        const definitions: Array<
-            | AssistantUpdateParams.AssistantToolsCode
-            | AssistantUpdateParams.AssistantToolsRetrieval
-            | AssistantUpdateParams.AssistantToolsFunction
-        > = this.tools.map((t) => ({
+        const definitions: Array<AssistantTool> = this.tools.map((t) => ({
             type: "function",
             function: t.definition,
         }));
@@ -83,21 +77,26 @@ export class MegAI {
         attachments: string[],
         update: UpdateCallback
     ): Promise<Session> {
-        const files: string[] = [];
-        // for (const attachment of attachments) {
-        //     const fileId = await ai.createFile(attachment.data, attachment.name);
-        //     files.push(fileId);
-        // }
+        const messages: MessageCreateParams[] = [];
 
         if (attachments.length > 0) {
-            prompt = `attachments:\n${attachments.join("\n")}\n\nprompt`;
+            messages.push({
+                role: "user",
+                content: attachments.map((a) => ({
+                    type: "image_url",
+                    image_url: { url: a, detail: "auto" },
+                })),
+            });
         }
 
-        const message: MessageCreateParams = {
+        // if (attachments.length > 0) {
+        //     prompt = `attachments:\n${attachments.join("\n")}\n\nprompt`;
+        // }
+
+        messages.push({
             role: "user",
             content: prompt,
-            file_ids: files,
-        };
+        });
 
         const session: Session = {
             channelId,
@@ -106,7 +105,7 @@ export class MegAI {
             attachments: [],
             footer: [],
         };
-        await this.chatCompletion(session, update, message);
+        await this.chatCompletion(session, update, messages);
         return session;
     }
 
@@ -117,13 +116,16 @@ export class MegAI {
     private async chatCompletion(
         session: Session,
         update: UpdateCallback,
-        message: MessageCreateParams
+        inputMessages: MessageCreateParams[]
     ): Promise<void> {
         const thread = await this.getThread(session.channelId);
         await thread.lock.acquire();
         try {
             const threadId = thread.threadId;
-            const messageId = (await ai.addMessage(threadId, message)).id;
+            let messageId = "";
+            for (const message of inputMessages) {
+                messageId = (await ai.addMessage(threadId, message)).id;
+            }
             const run = await ai.assistantCompletion(
                 threadId,
                 personality.content
@@ -152,7 +154,7 @@ export class MegAI {
                         this.log.debug(
                             `[${this.botName}] ${content.text.value}`
                         );
-                    } else {
+                    } else if (content.type === "image_file") {
                         const file = await ai.retrieveFile(
                             content.image_file.file_id
                         );

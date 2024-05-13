@@ -5,10 +5,10 @@ import {
     ChatCompletionMessageParam,
 } from "openai/resources/chat/completions";
 import { getLogger } from "./logger";
-import { MessageCreateParams } from "openai/resources/beta/threads/messages/messages";
 import { RunSubmitToolOutputsParams } from "openai/resources/beta/threads/runs/runs";
-import { AssistantUpdateParams } from "openai/resources/beta/assistants/assistants";
 import { toFile } from "openai/uploads";
+import { AssistantUpdateParams } from "openai/resources/beta/assistants";
+import { MessageCreateParams } from "openai/resources/beta/threads/messages";
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API,
@@ -119,7 +119,7 @@ async function getMessages(threadId: string, after?: string) {
     }
 }
 
-async function createFile(file: ArrayBuffer, name: string) {
+async function createFile(file: ArrayBuffer, name?: string) {
     await lock.acquire();
     try {
         const result = await openai.files.create({
