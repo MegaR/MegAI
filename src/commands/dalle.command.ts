@@ -2,6 +2,7 @@ import {
     AttachmentBuilder,
     ChatInputCommandInteraction,
     Client,
+    EmbedBuilder,
     SlashCommandBuilder,
 } from "discord.js";
 import Command from "./command.interface";
@@ -34,16 +35,32 @@ export const dalleCommand: Command<ChatInputCommandInteraction> = {
             log.debug(prompt);
 
             const image = await ai.dalle(prompt.value as string);
-            const data = Buffer.from(image, "base64");
+            const data = Buffer.from(image.b64_json!, "base64");
+
+            const embed = new EmbedBuilder()
+                .addFields([
+                    { name: "prompt", value: prompt.value as string },
+                    {
+                        name: "revised prompt",
+                        value: image.revised_prompt || (prompt.value as string),
+                    },
+                ])
+                .setImage("attachment://image.png");
+
             await reply.edit({
-                content: prompt.value as string,
+                content: '',
+                embeds: [embed],
                 files: [
                     new AttachmentBuilder(data, {
                         name: "image.png",
                     }),
                 ],
             });
-        } catch (e) {
+        } catch (e: any) {
+            if(e?.code === "content_policy_violation") {
+                reply.edit("⛔ content policy violation");
+                return;
+            }
             log.error(e);
             reply.edit("❌ Something went wrong. 😢");
         }

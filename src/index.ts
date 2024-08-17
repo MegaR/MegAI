@@ -24,7 +24,6 @@ import { summaryCommand } from "./commands/summary.command";
 import { dalleCommand } from "./commands/dalle.command";
 import clearCommand from "./commands/clear.command";
 import { taskCommand } from "./commands/task.command";
-import { imageCommand } from "./commands/image.command";
 import { minecraftCommand } from "./minecraft/minecraft";
 
 const log = getLogger("main");
@@ -39,7 +38,6 @@ async function start() {
         dalleCommand,
         taskCommand,
         new clearCommand(megAI),
-        imageCommand,
         minecraftCommand,
     ];
     await setupCommands();

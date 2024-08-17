@@ -219,7 +219,7 @@ async function dalle(prompt: string) {
             response_format: "b64_json",
         });
         logger.debug(response.data[0].revised_prompt);
-        return response.data[0].b64_json!;
+        return response.data[0];
     } finally {
         lock.release();
     }

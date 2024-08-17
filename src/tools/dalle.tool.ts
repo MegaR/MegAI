@@ -1,6 +1,5 @@
 import Tool from "../tool.interface";
 import { Session } from "../session.interface";
-import { getLogger } from "../logger";
 import { ai } from "../openaiwrapper";
 
 const dalleTool: Tool = {
@@ -22,7 +21,7 @@ const dalleTool: Tool = {
     },
     execute: async (parameters: any, session?: Session) => {
         const image = await ai.dalle(parameters.prompt);
-        const data = Buffer.from(image, "base64");
+        const data = Buffer.from(image.b64_json!, "base64");
         if (session) {
             session.attachments.push({ file: data, name: "image.png" });
         }

@@ -5,7 +5,6 @@ import { Session } from "./session.interface";
 import googleImagesTool from "./tools/google-images.tool";
 import { getLogger } from "./logger";
 import { ai } from "./openaiwrapper";
-import { ChatCompletionSystemMessageParam } from "openai/resources/chat/completions";
 import dalleTool from "./tools/dalle.tool";
 import browserTool from "./tools/browser.tool";
 import googlePlacesTool from "./tools/google-places.tool";
@@ -18,7 +17,7 @@ import {
 import { AssistantTool } from "openai/resources/beta/assistants";
 import { MessageCreateParams } from "openai/resources/beta/threads/messages";
 
-const personality: ChatCompletionSystemMessageParam = {
+const personality = {
     role: "system",
     content: [
         "AI, you are playing the role of a Discord bot named BOTNAME. You were created by a user named Rachel, also known as Mega_R.",
@@ -149,20 +148,39 @@ export class MegAI {
             const messages = await ai.getMessages(threadId, messageId);
             for (const result of messages) {
                 for (const content of result.content) {
-                    if (content.type === "text") {
-                        session.responses.push(content.text.value);
-                        this.log.debug(
-                            `[${this.botName}] ${content.text.value}`
-                        );
-                    } else if (content.type === "image_file") {
-                        const file = await ai.retrieveFile(
-                            content.image_file.file_id
-                        );
-                        const data = Buffer.from(file);
-                        session.attachments.push({
-                            name: "image.png",
-                            file: data,
-                        });
+                    switch(content.type) {
+                        case "text":
+                            session.responses.push(content.text.value);
+                            this.log.debug(
+                                `[${this.botName}] ${content.text.value}`
+                            );
+                            break;
+                        case "image_file": {
+                            const file = await ai.retrieveFile(
+                                content.image_file.file_id
+                            );
+                            const data = Buffer.from(file);
+                            session.attachments.push({
+                                name: "image.png",
+                                file: data,
+                            });
+                            break;
+                        }
+                        case "image_url":
+                            session.responses.push(content.image_url.url);
+                            this.log.debug(
+                                `[${this.botName}] ${content.image_url.url}`
+                            );
+                            break;
+                        case "refusal":
+                            session.responses.push(`⛔ reply refused: ${content.refusal}`);
+                            this.log.warn(
+                                `[${this.botName}] ${content.refusal}`
+                            )
+                            break;
+                        default:
+                            console.error(`Unhandled content type: ${(content as any).type}`);
+                            break;
                     }
                 }
             }
@@ -186,6 +204,7 @@ export class MegAI {
         | "failed"
         | "completed"
         | "expired"
+        | "incomplete"
     > {
         let status;
         do {

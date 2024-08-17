@@ -15,12 +15,12 @@ import googleImagesTool from "../tools/google-images.tool";
 import googlePlacesTool from "../tools/google-places.tool";
 import wikipediaTool from "../tools/wikipedia.tool";
 import browserTool from "../tools/browser.tool";
-import { AssistantUpdateParams } from "openai/resources/beta/assistants/assistants";
+import { AssistantTool } from "openai/resources/beta/assistants";
 import {
-    MessageContentText,
+    TextContentBlock,
     MessageCreateParams,
-    ThreadMessage,
-} from "openai/resources/beta/threads/messages/messages";
+    Message,
+} from "openai/resources/beta/threads/messages";
 import { sleep } from "openai/core";
 import {
     RequiredActionFunctionToolCall,
@@ -97,7 +97,7 @@ async function startTask(
         { role: "user", content: "Start task" },
     ];
     for (let i = 0; i < 10; i++) {
-        let results: ThreadMessage[] | true = await handleAssistantA(
+        let results: Message[] | true = await handleAssistantA(
             task,
             threadA,
             newMessages
@@ -107,7 +107,7 @@ async function startTask(
         newMessages = (
             results
                 .flatMap((r) => r.content)
-                .filter((c) => c.type === "text") as MessageContentText[]
+                .filter((c) => c.type === "text") as TextContentBlock[]
         ).map((c) => ({ role: "user", content: c.text.value }));
         results = await handleAssistantB(criteria, threadB, newMessages);
         if (results === true) {
@@ -118,7 +118,7 @@ async function startTask(
         newMessages = (
             results
                 .flatMap((r) => r.content)
-                .filter((c) => c.type === "text") as MessageContentText[]
+                .filter((c) => c.type === "text") as TextContentBlock[]
         ).map((c) => ({ role: "user", content: c.text.value }));
     }
     thread.send("Task failed 😔");
@@ -174,12 +174,16 @@ async function handleAssistantB(
 
 async function updateThread(
     thread: ThreadChannel,
-    messages: ThreadMessage[],
+    messages: Message[],
     color: ColorResolvable
 ) {
     for (const message of messages) {
         for (const content of message.content) {
-            if (content.type === "image_file") {
+            if (content.type === "image_file" || content.type === "image_url") {
+                continue;
+            }
+            if (content.type === "refusal") {
+                console.warn("Content refused");
                 continue;
             }
             log.debug(content.text.value);
@@ -208,6 +212,7 @@ async function handleRun(
     | "failed"
     | "completed"
     | "expired"
+    | "incomplete"
     | true
 > {
     let status;
@@ -291,13 +296,11 @@ async function handleToolCall(
         };
     }
 }
-
 async function setupAssistants() {
-    const definitions: Array<
-        | AssistantUpdateParams.AssistantToolsCode
-        | AssistantUpdateParams.AssistantToolsRetrieval
-        | AssistantUpdateParams.AssistantToolsFunction
-    > = tools.map((t) => ({ type: "function", function: t.definition }));
+    const definitions: Array<AssistantTool> = tools.map((t) => ({
+        type: "function",
+        function: t.definition,
+    }));
     // definitions.push({ type: 'code_interpreter' });
     ai.updateAssistant(
         {
