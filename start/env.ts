@@ -24,4 +24,11 @@ export default await Env.create(new URL('../', import.meta.url), {
   |----------------------------------------------------------
   */
   SESSION_DRIVER: Env.schema.enum(['cookie', 'memory'] as const),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for configuring Discord bot
+  |----------------------------------------------------------
+  */
+  DISCORD_BOT_TOKEN: Env.schema.string(),
 })
