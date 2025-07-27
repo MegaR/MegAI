@@ -8,7 +8,7 @@ export default class DiscordProvider {
    * Register bindings to the container
    */
   register() {
-    this.app.container.singleton('discord', () => {
+    this.app.container.singleton(DiscordService, async () => {
       return new DiscordService()
     })
   }
@@ -22,7 +22,7 @@ export default class DiscordProvider {
    * The application has been booted
    */
   async start() {
-    const discord = await this.app.container.make('discord')
+    const discord = await this.app.container.make(DiscordService)
 
     // Only start Discord bot if token is provided
     const token = process.env.DISCORD_BOT_TOKEN
@@ -40,7 +40,7 @@ export default class DiscordProvider {
    * Preparing to shutdown the app
    */
   async shutdown() {
-    const discord = await this.app.container.make('discord')
+    const discord = await this.app.container.make(DiscordService)
     await discord.stop()
   }
 }
