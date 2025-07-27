@@ -1,6 +1,7 @@
 # MegAI - AdonisJS Project Context
 
 ## Build/Test/Lint Commands
+
 - `npm run dev` - Start development server with HMR
 - `npm run build` - Build for production
 - `npm run test` - Run all tests
@@ -11,6 +12,7 @@
 - `npm run typecheck` - TypeScript type checking
 
 ## Code Style & Conventions
+
 - **Framework**: AdonisJS v6 with TypeScript
 - **Imports**: Use `#` aliases (e.g., `#controllers/*`, `#services/*`, `#models/*`)
 - **Classes**: PascalCase with descriptive names (e.g., `HttpExceptionHandler`, `ContainerBindingsMiddleware`)

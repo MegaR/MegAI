@@ -1,5 +1,5 @@
-import DiscordService from '#services/discord_service'
-import { ApplicationService } from '@adonisjs/core/types'
+import DiscordService from "#services/discord_service";
+import { ApplicationService } from "@adonisjs/core/types";
 
 export default class DiscordProvider {
   constructor(protected app: ApplicationService) {}
@@ -9,8 +9,8 @@ export default class DiscordProvider {
    */
   register() {
     this.app.container.singleton(DiscordService, async () => {
-      return new DiscordService()
-    })
+      return new DiscordService();
+    });
   }
 
   /**
@@ -22,12 +22,12 @@ export default class DiscordProvider {
    * The application has been booted
    */
   async start() {
-    const discord = await this.app.container.make(DiscordService)
+    const discord = await this.app.container.make(DiscordService);
 
     // Only start Discord bot if token is provided
-    const token = process.env.DISCORD_BOT_TOKEN
+    const token = process.env.DISCORD_BOT_TOKEN;
     if (token) {
-      await discord.start()
+      await discord.start();
     }
   }
 
@@ -40,7 +40,7 @@ export default class DiscordProvider {
    * Preparing to shutdown the app
    */
   async shutdown() {
-    const discord = await this.app.container.make(DiscordService)
-    await discord.stop()
+    const discord = await this.app.container.make(DiscordService);
+    await discord.stop();
   }
 }
