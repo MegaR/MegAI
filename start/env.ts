@@ -40,4 +40,5 @@ export default await Env.create(new URL("../", import.meta.url), {
   OPENAI_API_KEY: Env.schema.string(),
   OPENAI_BASE_URL: Env.schema.string.optional(),
   OPENAI_MODEL: Env.schema.string.optional(),
+  CHAT_HISTORY_LIMIT: Env.schema.number.optional(),
 });

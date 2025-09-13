@@ -2,6 +2,8 @@ import { Client, GatewayIntentBits, Events, Message } from "discord.js";
 import logger from "@adonisjs/core/services/logger";
 import env from "#start/env";
 import OpenAIService from "#services/openai_service";
+import ChatMessage from "#models/chat_message";
+import type OpenAI from "openai";
 
 export default class DiscordService {
   private client: Client;
@@ -48,16 +50,44 @@ export default class DiscordService {
               await message.channel.sendTyping();
             }
 
-            const response = await this.openaiService.createChatCompletion([
-              {
-                role: "user",
-                content: prompt,
-              },
-            ]);
+            // Store the user's message
+            await ChatMessage.storeUserMessage(
+              message.channel.id,
+              message.author.id,
+              message.author.username,
+              prompt,
+              message.id,
+            );
+
+            // Get recent chat history for context
+            const historyLimit = env.get("CHAT_HISTORY_LIMIT", 10);
+            const recentMessages = await ChatMessage.getRecentMessages(
+              message.channel.id,
+              historyLimit,
+            );
+
+            // Build conversation context from recent messages (reverse to chronological order)
+            const conversationHistory: OpenAI.Chat.Completions.ChatCompletionMessageParam[] =
+              recentMessages.reverse().map((msg) => ({
+                role: msg.role as "user" | "assistant",
+                content: msg.content,
+              }));
+
+            const response =
+              await this.openaiService.createChatCompletion(
+                conversationHistory,
+              );
 
             const aiResponse = response.choices[0]?.message?.content;
             if (aiResponse) {
-              await message.reply(aiResponse);
+              const reply = await message.reply(aiResponse);
+
+              // Store the assistant's response
+              await ChatMessage.storeAssistantMessage(
+                message.channel.id,
+                aiResponse,
+                reply.id,
+              );
             } else {
               await message.reply("Sorry, I couldn't generate a response.");
             }
