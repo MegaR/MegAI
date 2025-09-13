@@ -63,6 +63,7 @@
     "discord.js": "^14.19.3",
     "edge.js": "^6.2.0",
     "luxon": "^3.5.0",
+    "openai": "^5.20.2",
     "reflect-metadata": "^0.2.2"
   },
   "hotHook": {
