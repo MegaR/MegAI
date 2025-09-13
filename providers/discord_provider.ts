@@ -1,5 +1,7 @@
 import DiscordService from "#services/discord_service";
+import OpenAIService from "#services/openai_service";
 import { ApplicationService } from "@adonisjs/core/types";
+import env from "#start/env";
 
 export default class DiscordProvider {
   constructor(protected app: ApplicationService) {}
@@ -8,8 +10,16 @@ export default class DiscordProvider {
    * Register bindings to the container
    */
   register() {
-    this.app.container.singleton(DiscordService, async () => {
-      return new DiscordService();
+    this.app.container.singleton(OpenAIService, async () => {
+      const apiKey = env.get("OPENAI_API_KEY");
+      const baseURL = env.get("OPENAI_BASE_URL");
+      const model = env.get("OPENAI_MODEL");
+      return new OpenAIService(apiKey, baseURL, model);
+    });
+
+    this.app.container.singleton(DiscordService, async (resolver) => {
+      const openaiService = await resolver.make(OpenAIService);
+      return new DiscordService(openaiService);
     });
   }
 

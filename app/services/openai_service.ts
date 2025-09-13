@@ -2,12 +2,14 @@ import OpenAI from "openai";
 
 export default class OpenAIService {
   private client: OpenAI;
+  private defaultModel: string;
 
-  constructor(apiKey: string, baseURL?: string) {
+  constructor(apiKey: string, baseURL?: string, model?: string) {
     this.client = new OpenAI({
       apiKey,
       baseURL,
     });
+    this.defaultModel = model || "gpt-3.5-turbo";
   }
 
   async createChatCompletion(
@@ -19,7 +21,7 @@ export default class OpenAIService {
     },
   ) {
     const response = await this.client.chat.completions.create({
-      model: options?.model || "gpt-3.5-turbo",
+      model: options?.model || this.defaultModel,
       messages,
       temperature: options?.temperature,
       max_tokens: options?.maxTokens,

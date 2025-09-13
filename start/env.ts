@@ -31,4 +31,13 @@ export default await Env.create(new URL("../", import.meta.url), {
   |----------------------------------------------------------
   */
   DISCORD_BOT_TOKEN: Env.schema.string(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for configuring OpenAI service
+  |----------------------------------------------------------
+  */
+  OPENAI_API_KEY: Env.schema.string(),
+  OPENAI_BASE_URL: Env.schema.string.optional(),
+  OPENAI_MODEL: Env.schema.string.optional(),
 });

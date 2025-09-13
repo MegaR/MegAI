@@ -1,12 +1,13 @@
 import { Client, GatewayIntentBits, Events, Message } from "discord.js";
 import logger from "@adonisjs/core/services/logger";
 import env from "#start/env";
+import OpenAIService from "#services/openai_service";
 
 export default class DiscordService {
   private client: Client;
   private isReady = false;
 
-  constructor() {
+  constructor(private openaiService: OpenAIService) {
     this.client = new Client({
       intents: [
         GatewayIntentBits.Guilds,
@@ -32,12 +33,41 @@ export default class DiscordService {
         await message.reply("Pong!");
       }
 
-      // AI command placeholder
-      if (message.content.startsWith("!ai ")) {
-        const prompt = message.content.slice(4);
-        await message.reply(
-          `You asked: "${prompt}". AI functionality coming soon!`,
-        );
+      // AI response when bot is mentioned
+      if (message.mentions.has(this.client.user!)) {
+        // Remove only the bot mention from the message content
+        const botId = this.client.user!.id;
+        const prompt = message.content
+          .replace(new RegExp(`<@!?${botId}>`, "g"), "") // Remove only bot mentions
+          .trim();
+
+        // Only respond if there's actual content after removing the mention
+        if (prompt.length > 0) {
+          try {
+            if ("sendTyping" in message.channel) {
+              await message.channel.sendTyping();
+            }
+
+            const response = await this.openaiService.createChatCompletion([
+              {
+                role: "user",
+                content: prompt,
+              },
+            ]);
+
+            const aiResponse = response.choices[0]?.message?.content;
+            if (aiResponse) {
+              await message.reply(aiResponse);
+            } else {
+              await message.reply("Sorry, I couldn't generate a response.");
+            }
+          } catch (error) {
+            logger.error("OpenAI API error:", error);
+            await message.reply(
+              "Sorry, I encountered an error while processing your request.",
+            );
+          }
+        }
       }
     });
 

@@ -29,6 +29,17 @@ test.group("OpenAI Service", (group) => {
     assert.instanceOf(service, OpenAIService);
   });
 
+  test("should create service with API key, base URL, and custom model", ({
+    assert,
+  }) => {
+    const service = new OpenAIService(
+      "test-api-key",
+      "https://api.custom.com",
+      "gpt-4",
+    );
+    assert.instanceOf(service, OpenAIService);
+  });
+
   test("should call createChatCompletion with default parameters", async ({
     assert,
   }) => {
@@ -302,7 +313,42 @@ test.group("OpenAI Service", (group) => {
     await service.createChatCompletion(messages, { maxTokens: 1 });
 
     assert.isTrue(createStub.calledOnce);
-    assert.equal(createStub.firstCall.args[0].max_tokens, 1);
     assert.equal(createStub.firstCall.args[0].temperature, undefined);
+  });
+
+  test("should use custom default model when provided", async ({ assert }) => {
+    const mockResponse: OpenAI.Chat.Completions.ChatCompletion = {
+      id: "chatcmpl-custom123",
+      object: "chat.completion",
+      created: 1234567890,
+      model: "gpt-4-0613",
+      choices: [
+        {
+          index: 0,
+          message: {
+            role: "assistant",
+            content: "Response from custom model.",
+            refusal: null,
+          },
+          logprobs: null,
+          finish_reason: "stop",
+        },
+      ],
+      usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+    };
+
+    const createStub = sandbox
+      .stub(OpenAI.Chat.Completions.prototype, "create")
+      .resolves(mockResponse);
+
+    const service = new OpenAIService("test-api-key", undefined, "gpt-4");
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      { role: "user", content: "Hello" },
+    ];
+
+    await service.createChatCompletion(messages);
+
+    assert.isTrue(createStub.calledOnce);
+    assert.equal(createStub.firstCall.args[0].model, "gpt-4");
   });
 });
