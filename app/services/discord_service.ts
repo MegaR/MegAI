@@ -6,6 +6,7 @@ import {
   SlashCommandBuilder,
   REST,
   Routes,
+  Partials,
 } from "discord.js";
 import logger from "@adonisjs/core/services/logger";
 import env from "#start/env";
@@ -20,8 +21,10 @@ export default class DiscordService {
       intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.DirectMessages,
         GatewayIntentBits.MessageContent,
       ],
+      partials: [Partials.Channel, Partials.Message],
     });
 
     this.setupEventHandlers();
@@ -83,6 +86,19 @@ export default class DiscordService {
     });
 
     this.client.on(Events.MessageCreate, async (message: Message) => {
+      // Handle partial messages for DMs
+      if (message.partial) {
+        try {
+          await message.fetch();
+        } catch (error) {
+          logger.error(
+            "Something went wrong when fetching the message:",
+            error,
+          );
+          return;
+        }
+      }
+
       await discordRouter.handleMessage(message, this.client.user!.id);
     });
 

@@ -64,6 +64,7 @@ test.group("Discord Router", (group) => {
     const mockMessage = {
       author: { bot: false },
       content: "!ping",
+      channel: { type: 0 }, // Guild channel
       reply: async (response: string) => {
         assert.equal(response, "Pong!");
       },
@@ -77,6 +78,7 @@ test.group("Discord Router", (group) => {
     const mockMessage = {
       author: { bot: true },
       content: "!ping",
+      channel: { type: 0 }, // Guild channel
       reply: async () => {
         // This should never be called
         assert.fail("Should not reply to bot messages");
@@ -88,5 +90,21 @@ test.group("Discord Router", (group) => {
 
     // If we get here without the assert.fail being called, the test passes
     assert.isTrue(true);
+  });
+
+  test("should handle ping in DM through router", async ({ assert }) => {
+    const mockMessage = {
+      author: { bot: false },
+      content: "!ping",
+      channel: {
+        type: 1, // DM channel
+      },
+      mentions: { has: () => false },
+      reply: async (response: string) => {
+        assert.equal(response, "Pong!");
+      },
+    } as any;
+
+    await discordRouter.handleMessage(mockMessage, "bot_user_id");
   });
 });

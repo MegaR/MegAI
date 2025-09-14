@@ -1,4 +1,5 @@
 import type { ChatInputCommandInteraction, Message } from "discord.js";
+import { ChannelType } from "discord.js";
 import logger from "@adonisjs/core/services/logger";
 import env from "#start/env";
 import OpenAIService from "#services/openai_service";
@@ -43,7 +44,7 @@ export default class DiscordController {
   }
 
   async handleMessage(message: Message, botUserId: string) {
-    if (message.author.bot) return;
+    if (message.author?.bot) return;
 
     // Simple ping command
     if (message.content === "!ping") {
@@ -51,14 +52,21 @@ export default class DiscordController {
       return;
     }
 
-    // AI response when bot is mentioned
-    if (message.mentions.has(botUserId)) {
-      // Remove only the bot mention from the message content
-      const prompt = message.content
-        .replace(new RegExp(`<@!?${botUserId}>`, "g"), "") // Remove only bot mentions
-        .trim();
+    // Check if this is a DM or if bot is mentioned
+    const isDM = message.channel.type === ChannelType.DM;
+    const isBotMentioned = message.mentions.has(botUserId);
 
-      // Only respond if there's actual content after removing the mention
+    if (isDM || isBotMentioned) {
+      let prompt = message.content;
+
+      // Remove bot mention if it's a guild message with mention
+      if (isBotMentioned && !isDM) {
+        prompt = message.content
+          .replace(new RegExp(`<@!?${botUserId}>`, "g"), "") // Remove only bot mentions
+          .trim();
+      }
+
+      // Only respond if there's actual content
       if (prompt.length > 0) {
         await this.handleAIResponse(message, prompt);
       }
@@ -74,8 +82,8 @@ export default class DiscordController {
       // Store the user's message
       await ChatMessage.storeUserMessage(
         message.channel.id,
-        message.author.id,
-        message.author.username,
+        message.author!.id,
+        message.author!.username,
         prompt,
         message.id,
       );

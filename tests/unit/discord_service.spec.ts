@@ -25,6 +25,7 @@ test.group("Discord Service", (group) => {
 
     assert.isTrue(client.options.intents.has("Guilds"));
     assert.isTrue(client.options.intents.has("GuildMessages"));
+    assert.isTrue(client.options.intents.has("DirectMessages"));
     assert.isTrue(client.options.intents.has("MessageContent"));
   });
 
