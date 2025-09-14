@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import { BaseModel, column } from "@adonisjs/lucid/orm";
+import type { ImageData } from "#services/image_service";
 
 export default class ChatMessage extends BaseModel {
   @column({ isPrimary: true })
@@ -23,6 +24,16 @@ export default class ChatMessage extends BaseModel {
   @column()
   declare messageId: string | null;
 
+  @column({
+    serializeAs: null,
+    prepare: (value) => (value ? JSON.stringify(value) : null),
+    consume: (value) => (value ? JSON.parse(value) : null),
+  })
+  declare images: ImageData[] | null;
+
+  @column()
+  declare hasImages: boolean;
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
@@ -42,6 +53,7 @@ export default class ChatMessage extends BaseModel {
     username: string,
     content: string,
     messageId?: string,
+    images?: ImageData[],
   ) {
     return await ChatMessage.create({
       channelId,
@@ -50,6 +62,8 @@ export default class ChatMessage extends BaseModel {
       content,
       role: "user",
       messageId,
+      images,
+      hasImages: Boolean(images && images.length > 0),
     });
   }
 
@@ -57,6 +71,7 @@ export default class ChatMessage extends BaseModel {
     channelId: string,
     content: string,
     messageId?: string,
+    images?: ImageData[],
   ) {
     return await ChatMessage.create({
       channelId,
@@ -65,6 +80,8 @@ export default class ChatMessage extends BaseModel {
       content,
       role: "assistant",
       messageId,
+      images,
+      hasImages: Boolean(images && images.length > 0),
     });
   }
 

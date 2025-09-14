@@ -241,6 +241,8 @@ test.group("Discord Controller", (group) => {
     const mockAttachment = {
       url: "https://cdn.discordapp.com/attachments/123/456/image.jpg",
       contentType: "image/jpeg",
+      name: "image.jpg",
+      size: 1024,
     };
 
     const mockAttachments = new Map([["123", mockAttachment]]);
@@ -267,6 +269,7 @@ test.group("Discord Controller", (group) => {
       createChatCompletionWithImages: async (
         text: string,
         images: string[],
+        _conversationHistory: any[],
       ) => {
         assert.equal(text, "What's in this image?");
         assert.equal(images.length, 1);
@@ -290,7 +293,20 @@ test.group("Discord Controller", (group) => {
       },
     } as any;
 
-    const controller = new DiscordController(mockOpenAI);
+    // Mock ImageService
+    const mockImageService = {
+      downloadMultipleImages: async (images: any[]) => {
+        return images.map((img) => ({
+          filename: img.filename || "image.jpg",
+          contentType: "image/jpeg",
+          size: 1024,
+          data: "base64encodeddata",
+          originalUrl: img.url,
+        }));
+      },
+    } as any;
+
+    const controller = new DiscordController(mockOpenAI, mockImageService);
 
     await controller.handleMessage(mockMessage, "bot_user_id");
 
@@ -318,6 +334,8 @@ test.group("Discord Controller", (group) => {
     const mockAttachment = {
       url: "https://example.com/image.png",
       contentType: "image/png",
+      name: "image.png",
+      size: 2048,
     };
 
     const mockAttachments = new Map([["456", mockAttachment]]);
@@ -344,6 +362,7 @@ test.group("Discord Controller", (group) => {
       createChatCompletionWithImages: async (
         text: string,
         images: string[],
+        _conversationHistory: any[],
       ) => {
         assert.equal(text, ""); // Should be empty text
         assert.equal(images.length, 1);
@@ -357,7 +376,20 @@ test.group("Discord Controller", (group) => {
       },
     } as any;
 
-    const controller = new DiscordController(mockOpenAI);
+    // Mock ImageService
+    const mockImageService = {
+      downloadMultipleImages: async (images: any[]) => {
+        return images.map((img) => ({
+          filename: img.filename || "image.png",
+          contentType: "image/png",
+          size: 2048,
+          data: "base64encodeddata",
+          originalUrl: img.url,
+        }));
+      },
+    } as any;
+
+    const controller = new DiscordController(mockOpenAI, mockImageService);
 
     await controller.handleMessage(mockMessage, "bot_user_id");
 

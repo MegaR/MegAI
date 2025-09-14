@@ -3,11 +3,15 @@ import { ChannelType } from "discord.js";
 import logger from "@adonisjs/core/services/logger";
 import env from "#start/env";
 import OpenAIService from "#services/openai_service";
+import ImageService, { type ImageData } from "#services/image_service";
 import ChatMessage from "#models/chat_message";
 import type OpenAI from "openai";
 
 export default class DiscordController {
-  constructor(private openaiService: OpenAIService) {}
+  constructor(
+    private openaiService: OpenAIService,
+    private imageService = new ImageService(),
+  ) {}
 
   async handleSlashCommand(interaction: ChatInputCommandInteraction) {
     if (interaction.commandName === "clear") {
@@ -66,18 +70,21 @@ export default class DiscordController {
           .trim();
       }
 
-      // Extract images from attachments
-      const imageUrls = message.attachments
+      // Extract image URLs from attachments
+      const imageAttachments = message.attachments
         ? Array.from(message.attachments.values())
             .filter((attachment) =>
               attachment.contentType?.startsWith("image/"),
             )
-            .map((attachment) => attachment.url)
+            .map((attachment) => ({
+              url: attachment.url,
+              filename: attachment.name || undefined,
+            }))
         : [];
 
       // Only respond if there's actual content or images
-      if (prompt.length > 0 || imageUrls.length > 0) {
-        await this.handleAIResponse(message, prompt, imageUrls);
+      if (prompt.length > 0 || imageAttachments.length > 0) {
+        await this.handleAIResponse(message, prompt, imageAttachments);
       }
     }
   }
@@ -85,17 +92,38 @@ export default class DiscordController {
   private async handleAIResponse(
     message: Message,
     prompt: string,
-    imageUrls: string[] = [],
+    imageAttachments: Array<{
+      url: string;
+      filename?: string;
+    }> = [],
   ) {
     try {
       if ("sendTyping" in message.channel) {
         await message.channel.sendTyping();
       }
 
-      // Store the user's message (include images in content for now)
+      // Download images if any
+      let downloadedImages: ImageData[] | undefined;
+      if (imageAttachments.length > 0) {
+        try {
+          logger.info(`Downloading ${imageAttachments.length} images...`);
+          downloadedImages =
+            await this.imageService.downloadMultipleImages(imageAttachments);
+          logger.info(
+            `Successfully downloaded ${downloadedImages.length} images`,
+          );
+        } catch (error) {
+          logger.error("Failed to download images:", error);
+          // Continue without images rather than failing completely
+          downloadedImages = undefined;
+        }
+      }
+
+      // Store the user's message with images
+      // Include image count in content for backward compatibility
       const userContent =
-        imageUrls.length > 0
-          ? `${prompt} [Images: ${imageUrls.length}]`
+        imageAttachments.length > 0
+          ? `${prompt} [Images: ${imageAttachments.length}]`
           : prompt;
 
       await ChatMessage.storeUserMessage(
@@ -104,6 +132,7 @@ export default class DiscordController {
         message.author!.username,
         userContent,
         message.id,
+        downloadedImages,
       );
 
       // Get recent chat history for context
@@ -114,18 +143,15 @@ export default class DiscordController {
       );
 
       // Build conversation context from recent messages (reverse to chronological order)
-      // Only include text-based messages in history for now (images are complex to re-send)
       const conversationHistory: OpenAI.Chat.Completions.ChatCompletionMessageParam[] =
-        recentMessages
-          .reverse()
-          .filter((msg) => !msg.content.includes("[Images:")) // Skip previous image messages for now
-          .map((msg) => ({
-            role: msg.role as "user" | "assistant",
-            content: msg.content,
-          }));
+        recentMessages.reverse().map((msg) => ({
+          role: msg.role as "user" | "assistant",
+          content: msg.content,
+        }));
 
+      const imageUrls = imageAttachments.map((img) => img.url);
       const response =
-        imageUrls.length > 0
+        imageAttachments.length > 0
           ? await this.openaiService.createChatCompletionWithImages(
               prompt,
               imageUrls,
