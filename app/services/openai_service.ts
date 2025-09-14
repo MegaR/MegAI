@@ -29,4 +29,56 @@ export default class OpenAIService {
 
     return response;
   }
+
+  async createChatCompletionWithImages(
+    textContent: string,
+    imageUrls: string[],
+    conversationHistory: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [],
+    options?: {
+      model?: string;
+      temperature?: number;
+      maxTokens?: number;
+    },
+  ) {
+    // Use the configured default model (assumed to be vision-capable)
+    const model = options?.model || this.defaultModel;
+    // Build the current message content with text and images
+    const currentMessageContent: OpenAI.Chat.Completions.ChatCompletionContentPart[] =
+      [];
+
+    if (textContent.trim()) {
+      currentMessageContent.push({
+        type: "text",
+        text: textContent,
+      });
+    }
+
+    // Add images to content
+    for (const imageUrl of imageUrls) {
+      currentMessageContent.push({
+        type: "image_url",
+        image_url: {
+          url: imageUrl,
+        },
+      });
+    }
+
+    // Build messages array with conversation history + current message
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      ...conversationHistory,
+      {
+        role: "user",
+        content: currentMessageContent,
+      },
+    ];
+
+    const response = await this.client.chat.completions.create({
+      model,
+      messages,
+      temperature: options?.temperature,
+      max_tokens: options?.maxTokens || 2000, // Higher default for vision responses
+    });
+
+    return response;
+  }
 }

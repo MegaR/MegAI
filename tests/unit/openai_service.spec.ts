@@ -351,4 +351,106 @@ test.group("OpenAI Service", (group) => {
     assert.isTrue(createStub.calledOnce);
     assert.equal(createStub.firstCall.args[0].model, "gpt-4");
   });
+
+  test("should create chat completion with images using vision model", async ({
+    assert,
+  }) => {
+    const mockResponse: OpenAI.Chat.Completions.ChatCompletion = {
+      id: "chatcmpl-vision123",
+      object: "chat.completion",
+      created: 1234567890,
+      model: "gpt-4o-2024-05-13",
+      choices: [
+        {
+          index: 0,
+          message: {
+            role: "assistant",
+            content: "I can see an image with a cat in it!",
+            refusal: null,
+          },
+          logprobs: null,
+          finish_reason: "stop",
+        },
+      ],
+      usage: { prompt_tokens: 50, completion_tokens: 12, total_tokens: 62 },
+    };
+
+    const createStub = sandbox
+      .stub(OpenAI.Chat.Completions.prototype, "create")
+      .resolves(mockResponse);
+
+    const service = new OpenAIService("test-api-key");
+    const result = await service.createChatCompletionWithImages(
+      "What's in this image?",
+      ["https://example.com/cat.jpg"],
+      [{ role: "system", content: "You are a helpful assistant." }],
+    );
+
+    assert.isTrue(createStub.calledOnce);
+    const callArgs = createStub.firstCall.args[0];
+
+    // Should use configured default model (vision-capable)
+    assert.equal(callArgs.model, "gpt-3.5-turbo");
+
+    // Should have system message + user message with mixed content
+    assert.equal(callArgs.messages.length, 2);
+    assert.equal(callArgs.messages[0].role, "system");
+    assert.equal(callArgs.messages[1].role, "user");
+
+    // Response should be correct
+    assert.equal(
+      result.choices[0].message.content,
+      "I can see an image with a cat in it!",
+    );
+  });
+
+  test("should handle multiple images in vision completion", async ({
+    assert,
+  }) => {
+    const mockResponse: OpenAI.Chat.Completions.ChatCompletion = {
+      id: "chatcmpl-multi-vision",
+      object: "chat.completion",
+      created: 1234567890,
+      model: "gpt-4o-2024-05-13",
+      choices: [
+        {
+          index: 0,
+          message: {
+            role: "assistant",
+            content: "I can see multiple images with different subjects.",
+            refusal: null,
+          },
+          logprobs: null,
+          finish_reason: "stop",
+        },
+      ],
+      usage: { prompt_tokens: 80, completion_tokens: 15, total_tokens: 95 },
+    };
+
+    const createStub = sandbox
+      .stub(OpenAI.Chat.Completions.prototype, "create")
+      .resolves(mockResponse);
+
+    const service = new OpenAIService("test-api-key");
+    const result = await service.createChatCompletionWithImages(
+      "Compare these images",
+      ["https://example.com/image1.jpg", "https://example.com/image2.jpg"],
+      [],
+    );
+
+    assert.isTrue(createStub.calledOnce);
+    const callArgs = createStub.firstCall.args[0];
+
+    // Should use configured default model (vision-capable)
+    assert.equal(callArgs.model, "gpt-3.5-turbo");
+
+    // Should have single user message
+    assert.equal(callArgs.messages.length, 1);
+
+    // Verify response
+    assert.equal(
+      result.choices[0].message.content,
+      "I can see multiple images with different subjects.",
+    );
+  });
 });

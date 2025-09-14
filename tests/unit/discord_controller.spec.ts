@@ -66,6 +66,7 @@ test.group("Discord Controller", (group) => {
       author: { bot: false },
       content: "!ping",
       channel: { type: 0 }, // Guild channel
+      attachments: new Map(), // No attachments
       reply: async (response: string) => {
         assert.equal(response, "Pong!");
       },
@@ -83,6 +84,7 @@ test.group("Discord Controller", (group) => {
       author: { bot: true },
       content: "!ping",
       channel: { type: 0 }, // Guild channel
+      attachments: new Map(), // No attachments
       reply: async () => {
         // This should never be called
         assert.fail("Should not reply to bot messages");
@@ -110,6 +112,7 @@ test.group("Discord Controller", (group) => {
         sendTyping: async () => {},
       },
       mentions: { has: () => false }, // No mentions in DM
+      attachments: new Map(), // Empty attachments
       reply: async (response: string) => {
         // Verify we get a response (OpenAI will be mocked)
         assert.isString(response);
@@ -155,6 +158,7 @@ test.group("Discord Controller", (group) => {
       author: { bot: false },
       content: "!ping",
       channel: { type: 1 }, // DM channel
+      attachments: new Map(), // No attachments
       reply: async (response: string) => {
         assert.equal(response, "Pong!");
       },
@@ -178,6 +182,7 @@ test.group("Discord Controller", (group) => {
         sendTyping: async () => {},
       },
       mentions: { has: (userId: string) => userId === "bot_user_id" },
+      attachments: new Map(), // Empty attachments
       reply: async (response: string) => {
         assert.isString(response);
         return { id: "reply_msg_456" }; // Mock reply message object
@@ -216,6 +221,7 @@ test.group("Discord Controller", (group) => {
       content: "Just a regular message",
       channel: { type: 0 }, // Guild channel
       mentions: { has: () => false }, // No mention
+      attachments: new Map(), // No attachments
       reply: async () => {
         assert.fail("Should not reply to non-mention guild messages");
       },
@@ -228,5 +234,146 @@ test.group("Discord Controller", (group) => {
 
     // If we get here without the assert.fail being called, the test passes
     assert.isTrue(true);
+  });
+
+  test("should handle message with image attachment", async ({ assert }) => {
+    // Mock image attachment
+    const mockAttachment = {
+      url: "https://cdn.discordapp.com/attachments/123/456/image.jpg",
+      contentType: "image/jpeg",
+    };
+
+    const mockAttachments = new Map([["123", mockAttachment]]);
+
+    const mockMessage = {
+      author: { bot: false, id: "user1", username: "testuser" },
+      id: "msg_123",
+      content: "What's in this image?",
+      channel: {
+        type: 1, // DM channel
+        id: "dm_channel_images",
+        sendTyping: async () => {},
+      },
+      mentions: { has: () => false },
+      attachments: mockAttachments,
+      reply: async (response: string) => {
+        assert.isString(response);
+        return { id: "reply_msg_123" };
+      },
+    } as any;
+
+    // Mock OpenAI service to simulate vision response
+    const mockOpenAI = {
+      createChatCompletionWithImages: async (
+        text: string,
+        images: string[],
+      ) => {
+        assert.equal(text, "What's in this image?");
+        assert.equal(images.length, 1);
+        assert.equal(
+          images[0],
+          "https://cdn.discordapp.com/attachments/123/456/image.jpg",
+        );
+        return {
+          choices: [
+            {
+              message: {
+                content: "I can see a beautiful landscape in the image!",
+              },
+            },
+          ],
+        };
+      },
+      createChatCompletion: async () => {
+        assert.fail("Should use vision method for images");
+        return { choices: [{ message: { content: "" } }] };
+      },
+    } as any;
+
+    const controller = new DiscordController(mockOpenAI);
+
+    await controller.handleMessage(mockMessage, "bot_user_id");
+
+    // Verify the message was stored with image indicator
+    const messages = await ChatMessage.getRecentMessages(
+      "dm_channel_images",
+      10,
+    );
+    assert.equal(messages.length, 2); // User message + AI response
+
+    // Find the user and AI messages
+    const userMessage = messages.find((m) => m.role === "user");
+    const aiMessage = messages.find((m) => m.role === "assistant");
+
+    assert.isDefined(userMessage);
+    assert.isDefined(aiMessage);
+    assert.include(userMessage!.content, "[Images: 1]"); // User message with image indicator
+    assert.include(aiMessage!.content, "I can see a beautiful landscape"); // AI response
+  });
+
+  test("should handle text-only message with image attachments", async ({
+    assert,
+  }) => {
+    // Mock image attachment with no text content
+    const mockAttachment = {
+      url: "https://example.com/image.png",
+      contentType: "image/png",
+    };
+
+    const mockAttachments = new Map([["456", mockAttachment]]);
+
+    const mockMessage = {
+      author: { bot: false, id: "user2", username: "imageuser" },
+      id: "msg_456",
+      content: "", // No text, just image
+      channel: {
+        type: 1, // DM channel
+        id: "dm_channel_imageonly",
+        sendTyping: async () => {},
+      },
+      mentions: { has: () => false },
+      attachments: mockAttachments,
+      reply: async (response: string) => {
+        assert.isString(response);
+        return { id: "reply_msg_456" };
+      },
+    } as any;
+
+    // Mock OpenAI service
+    const mockOpenAI = {
+      createChatCompletionWithImages: async (
+        text: string,
+        images: string[],
+      ) => {
+        assert.equal(text, ""); // Should be empty text
+        assert.equal(images.length, 1);
+        return {
+          choices: [{ message: { content: "I can analyze this image!" } }],
+        };
+      },
+      createChatCompletion: async () => {
+        assert.fail("Should use vision method for images");
+        return { choices: [{ message: { content: "" } }] };
+      },
+    } as any;
+
+    const controller = new DiscordController(mockOpenAI);
+
+    await controller.handleMessage(mockMessage, "bot_user_id");
+
+    // Verify the message was processed even with no text
+    const messages = await ChatMessage.getRecentMessages(
+      "dm_channel_imageonly",
+      10,
+    );
+    assert.equal(messages.length, 2); // User message + AI response
+
+    // Find the user and AI messages
+    const userMessage = messages.find((m) => m.role === "user");
+    const aiMessage = messages.find((m) => m.role === "assistant");
+
+    assert.isDefined(userMessage);
+    assert.isDefined(aiMessage);
+    assert.include(userMessage!.content, "[Images: 1]"); // Should still have image indicator
   });
 });

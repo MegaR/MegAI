@@ -66,25 +66,43 @@ export default class DiscordController {
           .trim();
       }
 
-      // Only respond if there's actual content
-      if (prompt.length > 0) {
-        await this.handleAIResponse(message, prompt);
+      // Extract images from attachments
+      const imageUrls = message.attachments
+        ? Array.from(message.attachments.values())
+            .filter((attachment) =>
+              attachment.contentType?.startsWith("image/"),
+            )
+            .map((attachment) => attachment.url)
+        : [];
+
+      // Only respond if there's actual content or images
+      if (prompt.length > 0 || imageUrls.length > 0) {
+        await this.handleAIResponse(message, prompt, imageUrls);
       }
     }
   }
 
-  private async handleAIResponse(message: Message, prompt: string) {
+  private async handleAIResponse(
+    message: Message,
+    prompt: string,
+    imageUrls: string[] = [],
+  ) {
     try {
       if ("sendTyping" in message.channel) {
         await message.channel.sendTyping();
       }
 
-      // Store the user's message
+      // Store the user's message (include images in content for now)
+      const userContent =
+        imageUrls.length > 0
+          ? `${prompt} [Images: ${imageUrls.length}]`
+          : prompt;
+
       await ChatMessage.storeUserMessage(
         message.channel.id,
         message.author!.id,
         message.author!.username,
-        prompt,
+        userContent,
         message.id,
       );
 
@@ -96,14 +114,27 @@ export default class DiscordController {
       );
 
       // Build conversation context from recent messages (reverse to chronological order)
+      // Only include text-based messages in history for now (images are complex to re-send)
       const conversationHistory: OpenAI.Chat.Completions.ChatCompletionMessageParam[] =
-        recentMessages.reverse().map((msg) => ({
-          role: msg.role as "user" | "assistant",
-          content: msg.content,
-        }));
+        recentMessages
+          .reverse()
+          .filter((msg) => !msg.content.includes("[Images:")) // Skip previous image messages for now
+          .map((msg) => ({
+            role: msg.role as "user" | "assistant",
+            content: msg.content,
+          }));
 
       const response =
-        await this.openaiService.createChatCompletion(conversationHistory);
+        imageUrls.length > 0
+          ? await this.openaiService.createChatCompletionWithImages(
+              prompt,
+              imageUrls,
+              conversationHistory,
+            )
+          : await this.openaiService.createChatCompletion([
+              ...conversationHistory,
+              { role: "user", content: prompt },
+            ]);
 
       const aiResponse = response.choices[0]?.message?.content;
       if (aiResponse) {
@@ -120,6 +151,10 @@ export default class DiscordController {
       }
     } catch (error) {
       logger.error("OpenAI API error:", error);
+      if (error instanceof Error) {
+        logger.error("Error message:", error.message);
+        logger.error("Error stack:", error.stack);
+      }
       await message.reply(
         "Sorry, I encountered an error while processing your request.",
       );
