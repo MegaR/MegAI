@@ -67,4 +67,8 @@ export default class ChatMessage extends BaseModel {
       messageId,
     });
   }
+
+  static async clearChannelHistory(channelId: string) {
+    return await ChatMessage.query().where("channel_id", channelId).delete();
+  }
 }

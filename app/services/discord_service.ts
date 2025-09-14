@@ -1,4 +1,12 @@
-import { Client, GatewayIntentBits, Events, Message } from "discord.js";
+import {
+  Client,
+  GatewayIntentBits,
+  Events,
+  Message,
+  SlashCommandBuilder,
+  REST,
+  Routes,
+} from "discord.js";
 import logger from "@adonisjs/core/services/logger";
 import env from "#start/env";
 import OpenAIService from "#services/openai_service";
@@ -21,10 +29,74 @@ export default class DiscordService {
     this.setupEventHandlers();
   }
 
+  private async registerSlashCommands() {
+    const commands = [
+      new SlashCommandBuilder()
+        .setName("clear")
+        .setDescription("Clear the chat history for this channel"),
+    ];
+
+    const rest = new REST({ version: "10" }).setToken(
+      env.get("DISCORD_BOT_TOKEN"),
+    );
+
+    try {
+      const clientId = this.client.user?.id;
+      if (!clientId) {
+        throw new Error("Client ID not available");
+      }
+
+      logger.info("Started refreshing application (/) commands.");
+
+      await rest.put(Routes.applicationCommands(clientId), {
+        body: commands.map((command) => command.toJSON()),
+      });
+
+      logger.info("Successfully reloaded application (/) commands.");
+    } catch (error) {
+      logger.error("Error registering slash commands:", error);
+    }
+  }
+
   private setupEventHandlers() {
-    this.client.once(Events.ClientReady, (readyClient) => {
+    this.client.once(Events.ClientReady, async (readyClient) => {
       this.isReady = true;
       logger.info(`Discord bot ready! Logged in as ${readyClient.user.tag}`);
+
+      // Register slash commands
+      await this.registerSlashCommands();
+    });
+
+    this.client.on(Events.InteractionCreate, async (interaction) => {
+      if (!interaction.isChatInputCommand()) return;
+
+      if (interaction.commandName === "clear") {
+        try {
+          await interaction.deferReply({ ephemeral: true });
+
+          const deletedCount = await ChatMessage.clearChannelHistory(
+            interaction.channel!.id,
+          );
+
+          await interaction.editReply(
+            `✅ Cleared chat history for this channel! (${deletedCount} messages removed)`,
+          );
+        } catch (error) {
+          logger.error("Error clearing chat history:", error);
+
+          if (interaction.deferred) {
+            await interaction.editReply(
+              "❌ Sorry, I encountered an error while clearing the chat history.",
+            );
+          } else {
+            await interaction.reply({
+              content:
+                "❌ Sorry, I encountered an error while clearing the chat history.",
+              ephemeral: true,
+            });
+          }
+        }
+      }
     });
 
     this.client.on(Events.MessageCreate, async (message: Message) => {
