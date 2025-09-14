@@ -1,5 +1,4 @@
 import DiscordService from "#services/discord_service";
-import OpenAIService from "#services/openai_service";
 import ChatMessage from "#models/chat_message";
 import { test } from "@japa/runner";
 
@@ -20,8 +19,7 @@ test.group("Discord Service", (group) => {
   });
 
   test("should create Discord client with correct intents", ({ assert }) => {
-    const openaiService = new OpenAIService("test-api-key");
-    const service = new DiscordService(openaiService);
+    const service = new DiscordService();
     services.push(service);
     const client = service.getClient();
 
@@ -31,8 +29,7 @@ test.group("Discord Service", (group) => {
   });
 
   test("should not be ready initially", ({ assert }) => {
-    const openaiService = new OpenAIService("test-api-key");
-    const service = new DiscordService(openaiService);
+    const service = new DiscordService();
     services.push(service);
     assert.isFalse(service.isClientReady());
   });
