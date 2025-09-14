@@ -34,9 +34,9 @@ export default class DiscordProvider {
   async start() {
     const discord = await this.app.container.make(DiscordService);
 
-    // Only start Discord bot if token is provided
+    // Only start Discord bot if token is provided and not in test environment
     const token = process.env.DISCORD_BOT_TOKEN;
-    if (token) {
+    if (token && !this.app.inTest) {
       await discord.start();
     }
   }
@@ -50,7 +50,10 @@ export default class DiscordProvider {
    * Preparing to shutdown the app
    */
   async shutdown() {
-    const discord = await this.app.container.make(DiscordService);
-    await discord.stop();
+    // Only stop Discord if not in test (since it won't be running in test)
+    if (!this.app.inTest) {
+      const discord = await this.app.container.make(DiscordService);
+      await discord.stop();
+    }
   }
 }

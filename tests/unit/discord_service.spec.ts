@@ -4,17 +4,25 @@ import ChatMessage from "#models/chat_message";
 import { test } from "@japa/runner";
 
 test.group("Discord Service", (group) => {
+  const services: DiscordService[] = [];
+
   group.each.setup(async () => {
     await ChatMessage.query().delete();
   });
 
   group.each.teardown(async () => {
     await ChatMessage.query().delete();
+    // Clean up any Discord services to prevent hanging
+    for (const service of services) {
+      await service.stop();
+    }
+    services.length = 0;
   });
 
   test("should create Discord client with correct intents", ({ assert }) => {
     const openaiService = new OpenAIService("test-api-key");
     const service = new DiscordService(openaiService);
+    services.push(service);
     const client = service.getClient();
 
     assert.isTrue(client.options.intents.has("Guilds"));
@@ -25,6 +33,7 @@ test.group("Discord Service", (group) => {
   test("should not be ready initially", ({ assert }) => {
     const openaiService = new OpenAIService("test-api-key");
     const service = new DiscordService(openaiService);
+    services.push(service);
     assert.isFalse(service.isClientReady());
   });
 

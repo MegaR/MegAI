@@ -9,6 +9,9 @@ tmp
 .env.production.local
 .env.development.local
 
+# Database
+/database
+
 # Frontend assets compiled code
 public/assets
 

@@ -22,7 +22,20 @@ export const plugins: Config["plugins"] = [assert(), pluginAdonisJS(app)];
  * The teardown functions are executed after all the tests
  */
 export const runnerHooks: Required<Pick<Config, "setup" | "teardown">> = {
-  setup: [],
+  setup: [
+    async () => {
+      // Import MigrationRunner directly and run migrations
+      const { MigrationRunner } = await import("@adonisjs/lucid/migration");
+      const db = await import("@adonisjs/lucid/services/db");
+
+      const migrator = new MigrationRunner(db.default, app, {
+        direction: "up",
+        connectionName: "sqlite",
+      });
+
+      await migrator.run();
+    },
+  ],
   teardown: [],
 };
 
